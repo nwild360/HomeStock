@@ -3,11 +3,18 @@ from pydantic import AnyUrl, Field, ValidationError, field_validator
 from typing import List
 
 class Settings(BaseSettings):
-    # Required
-    DATABASE_URL: AnyUrl
+    # Database Config
+    POSTGRES_USER: str = Field(default="homestock_user")
+    POSTGRES_PASSWORD: str = Field(default="change_me_now")
+    POSTGRES_DB: str = Field(default="homestock")
+    POSTGRES_HOST: str = Field(default="db")
+    POSTGRES_PORT: int = Field(default=5432)
 
     # CORS settings
     CORS_ORIGINS: str = Field(default="http://localhost:5173")
+
+    # API Key for authentication
+    API_KEY: str 
 
     @property
     def cors_origins_list(self) -> List[str]:

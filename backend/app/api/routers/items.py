@@ -1,10 +1,10 @@
 from typing import Optional, Literal
-from fastapi import APIRouter, Query, Depends, Path, Header, status
+from fastapi import APIRouter, Query, Depends, Path, Header, status, Request
+from sqlalchemy.orm import Session
 from app.api.schemas import *
 from app.api.services import items_service
-
-# You need to import these from your actual dependencies module
-from app.dependencies import get_db, require_auth_api_key, require_idempotency_key
+from app.dependencies.db_session import get_dbsession
+from app.dependencies.auth import require_auth_api_key
 
 router = APIRouter(prefix="/items", tags=["items"])
 
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/items", tags=["items"])
 def get_items(
     page: int = Query(1, ge=1, le=10000),
     page_size: int = Query(20, ge=1, le=100),
-    db=Depends(get_db)
+    db=Depends(get_dbsession)
 ):
     return items_service.get_items(db, page=page, page_size=page_size)
 
@@ -26,14 +26,17 @@ def get_items(
     "", 
     response_model=ItemOut, 
     status_code=status.HTTP_201_CREATED, 
-    dependencies=[Depends(require_auth_api_key)],
+    dependencies=[Depends(require_auth_api_key)]
 )
-def create_item(
+async def create_item(
+    request: Request,
     body: ItemCreate,
-    db=Depends(get_db),
-    idempotency_key: str = Depends(require_idempotency_key)
+    db: Session = Depends(get_dbsession),
 ):
-    return items_service.create_item(db, body)
+    # Create the item
+    result = items_service.create_item(db, body)
+    
+    return result
 
 # GET /items/{id}
 @router.get(
@@ -41,7 +44,7 @@ def create_item(
     response_model=ItemOut,
     dependencies=[Depends(require_auth_api_key)],
 )
-def get_item(id: int, db=Depends(get_db)):
+def get_item(id: int, db=Depends(get_dbsession)):
     return items_service.get_item(db, id)
 
 # PATCH /items/{id}
@@ -53,7 +56,7 @@ def get_item(id: int, db=Depends(get_db)):
 def update_item(
     id: int,
     body: ItemPatch,
-    db=Depends(get_db),
+    db=Depends(get_dbsession),
     if_unmodified_since: str | None = Header(default=None, alias="If-Unmodified-Since"),
 ):
     return items_service.update_item(db, id, body, if_unmodified_since)
@@ -67,8 +70,7 @@ def update_item(
 def patch_stock(
     id: int,
     body: StockPatch,
-    db=Depends(get_db),
-    idempotency_key: str = Depends(require_idempotency_key),
+    db=Depends(get_dbsession),
     if_unmodified_since: str | None = Header(default=None, alias="If-Unmodified-Since"),
 ):
     return items_service.patch_stock(db, id, body, if_unmodified_since)
@@ -81,6 +83,6 @@ def patch_stock(
 )
 def delete_item(
     id: int,
-    db=Depends(get_db)
+    db=Depends(get_dbsession)
 ): 
     items_service.delete_item(db, id)

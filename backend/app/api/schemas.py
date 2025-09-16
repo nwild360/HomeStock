@@ -6,14 +6,14 @@ from pydantic import BaseModel, Field
 
 # ---- Items ----
 class ItemOut(BaseModel):
-    id: int
-    name: str
+    item_id: int
+    item_name: str
     item_type: Literal["food", "household","equipment"]
-    category_id: int
+    category_name: Optional[str]
     mealie_food_id: Optional[str] = None
-    quantity: Decimal = Decimal("0")
-    unit_id: Optional[int] = None
-    notes: str
+    quantity: Decimal = Field(..., ge=0)
+    unit_name: Optional[str] = None
+    notes: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -24,17 +24,21 @@ class ItemsPage(BaseModel):
     total: int = 0
 
 class ItemCreate(BaseModel):
-    name: str
-    item_type: Literal["food", "household","equipment"]
-    category_id: Optional[int] = None
-    quantity: Optional[Decimal] = None
-    unit_id: Optional[int] = None
-    mealie_food_id: Optional[str] = None
+    item_name: str = Field(..., min_length=1, max_length=255)
+    item_type: Literal["food", "household", "equipment"]
+    category_name: Optional[str] = Field(default=None, example="Pantry")
+    quantity: Decimal = Field(..., ge=0)  # Make quantity required
+    unit_name: Optional[str] = Field(default=None, example=None)
+    notes: Optional[str] = Field(default="", max_length=1000)  # Make notes optional with empty string default
+    mealie_food_id: Optional[str] = None  # Add mealie_food_id as optional
+    created_at: datetime
 
 class ItemPatch(BaseModel):
     name: Optional[str] = None
-    category_id: Optional[int] = None
+    category_name: Optional[int] = None
+    quantity: Optional[Decimal] = Field(default=None, ge=0)
     notes: Optional[str] = None
+    updated_at: datetime
 
 class StockPatch(BaseModel):
     delta: Optional[Decimal] = Field(default=None, description="Mutually exclusive with new_qty")

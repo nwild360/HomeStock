@@ -24,12 +24,12 @@ services:
   
   backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: homestock-backend
     environment:
-      DATABASE_URL: ${DATABASE_URL}
       CORS_ORIGINS: ${CORS_ORIGINS}
+      API_KEY: ${API_KEY}
     volumes:
       - ./backend:/app   # bind-mount code for --reload
     ports:
