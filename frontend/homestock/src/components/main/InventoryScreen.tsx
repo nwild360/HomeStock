@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import StatBoxes from './StatBoxes';
+import ItemsTable from './ItemsTable.tsx';
+import type { InventoryType } from '../../types/InventoryTypes.ts';
 
 interface InventoryItem {
   id: string;
@@ -6,6 +9,10 @@ interface InventoryItem {
   category: string;
   quantity: number;
   unit: string;
+}
+
+interface InventoryScreenProps {
+  screenType: InventoryType;
 }
 
 // Mock data - replace with API call later
@@ -18,9 +25,15 @@ const mockItems: InventoryItem[] = [
   { id: '6', name: 'Tomatoes', category: 'Produce', quantity: 6, unit: 'Count' },
   { id: '7', name: 'Pasta', category: 'Grains', quantity: 2, unit: 'Boxes' },
   { id: '8', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
+  { id: '9', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
+  { id: '10', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
+  { id: '11', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
+  { id: '12', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
+  { id: '13', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
+  { id: '14', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
 ];
 
-const InventoryScreen: React.FC = () => {
+const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType }) => {
   const [items, setItems] = useState<InventoryItem[]>(mockItems);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,9 +58,19 @@ const InventoryScreen: React.FC = () => {
   // Handlers
   const handleQuantityChange = (id: string, newQuantity: number) => {
     if (newQuantity < 0) return;
-    setItems(items.map(item => 
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    ));
+    
+    setItems(prevItems => 
+      prevItems.map(item => 
+        item.id === id ? { ...item, quantity: newQuantity } : item
+      )
+    );
+    
+    // TODO: Add API call here when backend is ready
+    // await fetch(`/api/inventory/${id}`, {
+    //   method: 'PUT',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ quantity: newQuantity })
+    // });
   };
 
   const handleDelete = (id: string) => {
@@ -55,72 +78,49 @@ const InventoryScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 w-full min-w-0 p-8 bg-gray-50 overflow-auto">
+    <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 overflow-auto">
       {/* Header */}
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Food Inventory</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-8 capitalize">
+        {screenType} Inventory
+      </h1>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-center mb-3">
-            {/* Card Icon */}
-          </div>
-          <div className="text-center">
-            <div className="text-4xl font-bold text-gray-900">{totalItems}</div>
-            <div className="text-sm text-gray-600 mt-1">Total Items</div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-center mb-3">
-            {/* Card Icon */}
-          </div>
-          <div className="text-center">
-            <div className="text-4xl font-bold text-gray-900">{expiringItems}</div>
-            <div className="text-sm text-gray-600 mt-1">Expiring Soon</div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-center mb-3">
-            {/* Card Icon */}
-          </div>
-          <div className="text-center">
-            <div className="text-4xl font-bold text-gray-900">{expiredItems}</div>
-            <div className="text-sm text-gray-600 mt-1">Expired</div>
-          </div>
-        </div>
-      </div>
+      <StatBoxes 
+        totalItems={totalItems}
+        expiringItems={expiringItems}
+        expiredItems={expiredItems}
+        screenType={screenType}
+      />
 
       {/* Search Bar */}
-      <div className="mb-6">
+      <div className="mb-4 md:mb-6">
         <input
           type="text"
           placeholder="Search items..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm md:text-base"
         />
       </div>
 
       {/* Pagination Controls */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex w-full items-center justify-between mb-3 md:mb-4">
         <button
           onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Previous
+          Prev
         </button>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2">
           {[...Array(Math.min(5, totalPages))].map((_, i) => {
             const pageNum = i + 1;
             return (
               <button
                 key={pageNum}
                 onClick={() => setCurrentPage(pageNum)}
-                className={`px-4 py-2 text-sm rounded-lg ${
+                className={`px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg ${
                   currentPage === pageNum
                     ? 'bg-gray-900 text-white'
                     : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
@@ -130,13 +130,13 @@ const InventoryScreen: React.FC = () => {
               </button>
             );
           })}
-          {totalPages > 5 && <span className="px-2">...</span>}
+          {totalPages > 5 && <span className="px-1 md:px-2 text-xs md:text-sm">...</span>}
           {totalPages > 5 && (
             <>
-              <button className="px-4 py-2 text-sm bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+              <button className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
                 {totalPages - 1}
               </button>
-              <button className="px-4 py-2 text-sm bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+              <button className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
                 {totalPages}
               </button>
             </>
@@ -146,66 +146,18 @@ const InventoryScreen: React.FC = () => {
         <button
           onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Next
         </button>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Item Name</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Category</th>
-              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Quantity</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Unit(s)</th>
-              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Delete Item</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {paginatedItems.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm text-gray-900">{item.name}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{item.category}</td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center justify-center gap-2">
-                    <button
-                      onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                      className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-gray-900 hover:bg-gray-900 hover:text-white transition-colors"
-                    >
-                      {/* Plus Icon */}
-                    </button>
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0)}
-                      className="w-16 text-center border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    />
-                    <button
-                      onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                      className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-gray-900 hover:bg-gray-900 hover:text-white transition-colors"
-                    >
-                      {/* Minus Icon */}
-                    </button>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">{item.unit}</td>
-                <td className="px-6 py-4 text-center">
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="px-4 py-1.5 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition-colors inline-flex items-center gap-1"
-                  >
-                    {/* Trashcan Icon */}
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ItemsTable 
+        items={paginatedItems}
+        onQuantityChange={handleQuantityChange}
+        onDelete={handleDelete}
+      />
     </div>
   );
 };

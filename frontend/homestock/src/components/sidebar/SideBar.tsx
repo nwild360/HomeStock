@@ -7,7 +7,7 @@ import type { InventoryType } from '../../types/InventoryTypes.ts';
 interface SidebarProps {
   currentScreen: InventoryType;
   onAddItem?: () => void;
-  onNavigate?: (item: string) => void;
+  onNavigate?: (screen: InventoryType) => void;
 }
 
 function Sidebar({ currentScreen, onAddItem, onNavigate }: SidebarProps) {
