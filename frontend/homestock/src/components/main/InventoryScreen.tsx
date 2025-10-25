@@ -30,7 +30,7 @@ const mockItems: InventoryItem[] = [
   { id: '11', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
   { id: '12', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
   { id: '13', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
-  { id: '14', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
+  { id: '14', name: 'Cheese Curds', category: 'Dairy', quantity: 1, unit: 'Blocks' },
 ];
 
 const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType }) => {
@@ -99,7 +99,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType }) => {
           placeholder="Search items..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm md:text-base"
+          className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-grey-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm md:text-base"
         />
       </div>
 

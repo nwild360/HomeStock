@@ -6,7 +6,7 @@ function AddItemButton({ onClick }: AddItemButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors relative"
+      className="w-full flex items-center justify-center bg-slate-950 hover:bg-lime-400 text-white hover:text-slate-950 font-medium py-3 px-4 rounded-lg transition-colors relative"
     >
       <svg 
         className="w-5 h-5 stroke-current absolute left-4 text-lime-400" 
