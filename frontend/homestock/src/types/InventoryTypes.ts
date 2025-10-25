@@ -1,9 +1,12 @@
+import FoodIcon from '../assets/FoodIcon.svg';
+import HouseholdIcon from '../assets/HouseHoldIcon.svg';
+
 export type InventoryType = 'food' | 'household'; // Could add equipment/tools later
 
 export interface MenuItem {
   id: InventoryType;
   label: string;
-  icon?: string; // For future icon support
+  icon: string; 
 }
 
 export interface StatBoxConfig {
@@ -12,8 +15,8 @@ export interface StatBoxConfig {
 }
 
 export const MENU_ITEMS: MenuItem[] = [
-  { id: 'food', label: 'Food' },
-  { id: 'household', label: 'Household' },
+  { id: 'food', label: 'Food', icon: FoodIcon},
+  { id: 'household', label: 'Household', icon: HouseholdIcon},
 ];
 
 export const STAT_BOX_CONFIGS: Record<InventoryType, StatBoxConfig> = {

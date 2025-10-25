@@ -24,7 +24,11 @@ function NavMenu({ currentScreen, onNavigate, onClose }: NavMenuProps) {
               : 'hover:bg-gray-800'
           }`}
         >
-          <span className="w-5 h-5">{/* Icon placeholder */}</span>
+          <img 
+            src={item.icon} 
+            alt={`${item.label} icon`}
+            className="w-6 h-6"
+          />
           <span className="capitalize">{item.label}</span>
         </button>
       ))}
