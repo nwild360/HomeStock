@@ -6,6 +6,11 @@
 ## App specific
 db_data
 
+# Python venv folder
+venv/
+
+# claude code
+CLAUDE.md
 
 # User-specific files
 *.rsuser

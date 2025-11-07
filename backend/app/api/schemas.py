@@ -20,12 +20,12 @@ class ItemOut(BaseModel):
 class ItemsPage(BaseModel):
     items: List[ItemOut]
     page: int = 1
-    page_size: int = 20
+    page_size: int = 10
     total: int = 0
 
 class ItemCreate(BaseModel):
     item_name: str = Field(..., min_length=1, max_length=255)
-    item_type: Literal["food", "household", "equipment"]
+    item_type: Literal["food", "household"ls]
     category_name: Optional[str] = Field(default=None, example="Pantry")
     quantity: Decimal = Field(..., ge=0)  # Make quantity required
     unit_name: Optional[str] = Field(default=None, example=None)

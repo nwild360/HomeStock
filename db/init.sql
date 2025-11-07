@@ -17,7 +17,17 @@ CREATE DOMAIN homestock.item_type AS TEXT
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 
 -- ========= Table Definitions ==========
--- Create categories table first (referenced by items)
+-- Create users table first
+CREATE TABLE IF NOT EXISTS homestock.users (
+    id BIGSERIAL PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE CHECK (
+        length(username) BETWEEN 3 AND 50 AND
+        username ~ '^[a-zA-Z0-9_-]+$'  -- alphanumeric, underscore, hyphen only
+    ),
+    hashed_password TEXT NOT NULL CHECK (length(hashed_password) >= 80)  -- argon2 hashes are ~90 chars
+);
+
+-- Create categories table second (referenced by items)
 CREATE TABLE IF NOT EXISTS homestock.categories (
     id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL UNIQUE CHECK (length(name) BETWEEN 1 AND 255),
@@ -46,6 +56,9 @@ CREATE TABLE IF NOT EXISTS homestock.items (
 );
 
 -- ========== Indexes ==========
+-- Index for username lookups (authentication)
+CREATE INDEX IF NOT EXISTS idx_users_username ON homestock.users (username);
+
 -- Helpful index for the foreign keys
 CREATE INDEX IF NOT EXISTS idx_items_category_id ON homestock.items (category_id);
 CREATE INDEX IF NOT EXISTS idx_items_unit_id ON homestock.items (unit_id);
