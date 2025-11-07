@@ -25,7 +25,7 @@ class ItemsPage(BaseModel):
 
 class ItemCreate(BaseModel):
     item_name: str = Field(..., min_length=1, max_length=255)
-    item_type: Literal["food", "household"]
+    item_type: Literal["food", "household"ls]
     category_name: Optional[str] = Field(default=None, example="Pantry")
     quantity: Decimal = Field(..., ge=0)  # Make quantity required
     unit_name: Optional[str] = Field(default=None, example=None)
