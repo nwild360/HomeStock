@@ -24,6 +24,17 @@ function App() {
     setCurrentScreen('food');
   };
 
+  const handleLogout = () => {
+    // TODO: Clear JWT token and any other auth data
+    // localStorage.removeItem('token');
+
+    console.log('User logged out');
+
+    // Reset state and return to login screen
+    setIsLoggedIn(false);
+    setCurrentScreen('food'); // Reset to default screen for next login
+  };
+
   // Show login screen if not logged in
   if (!isLoggedIn) {
     return <LoginScreen onLogin={handleLogin} />;
@@ -36,6 +47,7 @@ function App() {
         currentScreen={currentScreen}
         onNavigate={handleNavigate}
         onAddItem={() => setIsAddItemOpen(true)}
+        onLogout={handleLogout}
         />
       <AddItemOverlay
         isOpen={isAddItemOpen}

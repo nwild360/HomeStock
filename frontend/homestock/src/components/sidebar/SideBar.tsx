@@ -8,13 +8,19 @@ interface SidebarProps {
   currentScreen: InventoryType;
   onAddItem?: () => void;
   onNavigate?: (screen: InventoryType) => void;
+  onLogout?: () => void;
 }
 
-function Sidebar({ currentScreen, onAddItem, onNavigate }: SidebarProps) {
+function Sidebar({ currentScreen, onAddItem, onNavigate, onLogout }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
-  
+
     const handleNavigate = (screen: InventoryType) => {
     onNavigate?.(screen);
+    setIsOpen(false);
+  };
+
+  const handleLogout = () => {
+    onLogout?.();
     setIsOpen(false);
   };
   
@@ -68,10 +74,42 @@ function Sidebar({ currentScreen, onAddItem, onNavigate }: SidebarProps) {
         </div>
 
         {/* Navigation Menu */}
-          <NavMenu 
+          <NavMenu
             currentScreen={currentScreen}
             onNavigate={handleNavigate}
           />
+
+        {/* Logout Button */}
+        <div className="mt-auto p-4 border-t border-gray-600">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 transition-colors text-white font-medium"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11 4.414l-4.293 4.293a1 1 0 01-1.414 0L4 7.414 5.414 6l3.293 3.293L13 5l1 1.414z"
+                clipRule="evenodd"
+              />
+              <path
+                fillRule="evenodd"
+                d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3h-2V4H4v12h11v-2h2v3a1 1 0 01-1 1H4a1 1 0 01-1-1V3z"
+                clipRule="evenodd"
+              />
+              <path
+                fillRule="evenodd"
+                d="M10 9a1 1 0 011 1v6a1 1 0 11-2 0v-6a1 1 0 011-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span>Logout</span>
+          </button>
+        </div>
       </aside>
     </div>
   );
