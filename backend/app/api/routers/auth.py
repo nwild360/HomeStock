@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.api.schemas import Token, UserCreate, UserOut
 from app.api.services import auth_service
 from app.dependencies.db_session import get_dbsession
 from app.dependencies.auth import require_auth
+from app.config import get_settings
 
+settings = get_settings()
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
 
@@ -33,30 +35,48 @@ def register(
 
 @router.post(
     "/token",
-    response_model=Token,
     summary="Login to get access token",
-    description="Authenticate with username and password to receive a JWT access token (30 min expiry)."
+    description="Authenticate with username and password. Sets httpOnly cookie with JWT (30 min expiry)."
 )
 def login(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_dbsession)
 ):
     """
-    OAuth2 compatible token login endpoint.
+    OAuth2 compatible token login endpoint with httpOnly cookie.
 
-    Use this endpoint to get an access token for authentication.
+    Use this endpoint to authenticate and receive a secure httpOnly cookie.
 
     - **username**: Your username
     - **password**: Your password
 
-    Returns a JWT access token that expires in 30 minutes.
+    Sets a secure httpOnly cookie that expires in 30 minutes.
+    The cookie is automatically included in subsequent requests.
 
-    Usage in subsequent requests:
-    ```
-    Authorization: Bearer <access_token>
-    ```
+    Security features:
+    - HttpOnly: Prevents JavaScript access (XSS protection)
+    - Secure: Only sent over HTTPS
+    - SameSite=Strict: Prevents CSRF attacks
     """
-    return auth_service.login_user(db, form_data.username, form_data.password)
+    token_data = auth_service.login_user(db, form_data.username, form_data.password)
+
+    # Set httpOnly cookie with JWT
+    response.set_cookie(
+        key="access_token",
+        value=token_data.access_token,
+        httponly=True,        # Prevents JavaScript access (XSS protection)
+        secure=settings.COOKIE_SECURE,  # Configured via .env (True for HTTPS/prod, False for HTTP/dev)
+        samesite="strict",    # CSRF protection - blocks cross-site requests
+        max_age=1800,         # 30 minutes (matches JWT expiry)
+        path="/",             # Available for all routes
+    )
+
+    return {
+        "message": "Login successful",
+        "token_type": "bearer",
+        "username": form_data.username
+    }
 
 
 @router.get(
@@ -71,9 +91,30 @@ def get_current_user_info(
     """
     Get current authenticated user's information.
 
-    Requires valid JWT token in Authorization header.
+    Requires valid JWT token in httpOnly cookie.
     """
     return UserOut(
         id=current_user["id"],
         username=current_user["username"]
     )
+
+
+@router.post(
+    "/logout",
+    summary="Logout and clear session",
+    description="Clears the httpOnly cookie to log out the user."
+)
+def logout(response: Response):
+    """
+    Logout endpoint - clears the httpOnly cookie.
+
+    This invalidates the session on the client side by removing the cookie.
+    The JWT itself remains valid until expiry, but the browser won't send it anymore.
+    """
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        samesite="strict"
+    )
+
+    return {"message": "Logged out successfully"}

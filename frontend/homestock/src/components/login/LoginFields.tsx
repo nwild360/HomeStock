@@ -1,4 +1,4 @@
-import { type ChangeEvent, type FocusEvent } from 'react';
+import { type ChangeEvent } from 'react';
 
 interface LoginFieldsProps {
   id: string;
@@ -29,7 +29,7 @@ function LoginFields({
     onChange(e.target.value);
   };
 
-  const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
+  const handleBlur = () => {
     onBlur();
   };
 

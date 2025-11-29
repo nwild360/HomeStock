@@ -3,7 +3,7 @@ from typing import Optional
 import base64
 import json
 import logging
-from fastapi import Depends, HTTPException, status
+from fastapi import Cookie, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -167,11 +167,11 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[dic
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    access_token: Optional[str] = Cookie(None),
     db: Session = Depends(get_dbsession)
 ) -> dict:
     """
-    Dependency to get current authenticated user from hybrid JWT token.
+    Dependency to get current authenticated user from hybrid JWT token in httpOnly cookie.
 
     Verifies BOTH signatures:
     1. RS256 signature (classical security)
@@ -184,6 +184,14 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    # Check if token exists in cookie
+    if not access_token:
+        logger.warning("❌ No access_token cookie found in request")
+        raise credentials_exception
+
+    # Use the cookie value as the token
+    token = access_token
 
     try:
         # Decode the token header without verification first (to get PQC signature)

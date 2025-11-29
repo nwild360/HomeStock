@@ -29,6 +29,7 @@ services:
     container_name: homestock-backend
     environment:
       CORS_ORIGINS: ${CORS_ORIGINS}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
       POSTGRES_USER: ${POSTGRES_USER:?err}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?err}
       POSTGRES_DB: ${POSTGRES_DB:-homestock}
@@ -46,3 +47,16 @@ services:
       interval: 10s
       timeout: 2s
       retries: 5
+
+  frontend:
+    build:
+      context: ./frontend/homestock
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    container_name: homestock-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

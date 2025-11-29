@@ -5,6 +5,7 @@ import SideBar from "./components/sidebar/SideBar.tsx"
 import AddItemOverlay from './components/sidebar/AddItemOverlay.tsx';
 import InventoryScreen from './components/main/InventoryScreen.tsx'
 import type { InventoryType } from './types/InventoryTypes.ts'
+import { login, logout, AuthError } from './services/authService'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -15,24 +16,37 @@ function App() {
     setCurrentScreen(screen);
   };
 
-  const handleLogin = (username: string, password: string) => {
-    // TODO: Add actual backend authentication here
-    console.log('Login attempt:', username, password);
+  const handleLogin = async (username: string, password: string) => {
+    try {
+      // Call backend authentication
+      const response = await login(username, password);
+      console.log('Login successful:', response.username);
 
-    // For now, just set logged in and navigate to food inventory
-    setIsLoggedIn(true);
-    setCurrentScreen('food');
+      // Set logged in and navigate to food inventory
+      setIsLoggedIn(true);
+      setCurrentScreen('food');
+    } catch (error) {
+      // Re-throw error to let LoginScreen handle display
+      if (error instanceof AuthError) {
+        throw error;
+      }
+      throw new AuthError('An unexpected error occurred');
+    }
   };
 
-  const handleLogout = () => {
-    // TODO: Clear JWT token and any other auth data
-    // localStorage.removeItem('token');
-
-    console.log('User logged out');
-
-    // Reset state and return to login screen
-    setIsLoggedIn(false);
-    setCurrentScreen('food'); // Reset to default screen for next login
+  const handleLogout = async () => {
+    try {
+      // Clear httpOnly cookie on backend
+      await logout();
+      console.log('User logged out successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Continue with logout even if backend call fails
+    } finally {
+      // Reset state and return to login screen
+      setIsLoggedIn(false);
+      setCurrentScreen('food'); // Reset to default screen for next login
+    }
   };
 
   // Show login screen if not logged in

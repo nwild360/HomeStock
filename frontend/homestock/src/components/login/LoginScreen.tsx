@@ -3,7 +3,7 @@ import logo from '../../assets/HomeStock.svg';
 import LoginFields from './LoginFields';
 
 interface LoginScreenProps {
-  onLogin: (username: string, password: string) => void;
+  onLogin: (username: string, password: string) => Promise<void>;
 }
 
 function LoginScreen({ onLogin }: LoginScreenProps) {
@@ -12,6 +12,7 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [usernameError, setUsernameError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [loginError, setLoginError] = useState('');
   const [touched, setTouched] = useState({ username: false, password: false });
 
   // Validation pattern: alphanumeric, underscore, and hyphen only
@@ -73,6 +74,9 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // Clear any previous login errors
+    setLoginError('');
+
     // Validate before submitting
     const isUsernameValid = validateField(username);
     const isPasswordValid = validateField(password);
@@ -94,6 +98,13 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
     setIsLoading(true);
     try {
       await onLogin(username, password);
+    } catch (error) {
+      // Display backend authentication error
+      if (error instanceof Error) {
+        setLoginError(error.message);
+      } else {
+        setLoginError('An unexpected error occurred');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -152,6 +163,13 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
             autoComplete="current-password"
             disabled={isLoading}
           />
+
+          {/* Login Error Message */}
+          {loginError && (
+            <div className="p-3 bg-red-900/50 border border-red-700 rounded-lg">
+              <p className="text-red-200 text-sm">{loginError}</p>
+            </div>
+          )}
 
           {/* Login Button */}
           <button

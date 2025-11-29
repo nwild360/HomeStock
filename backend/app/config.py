@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     # CORS settings
     CORS_ORIGINS: str = Field(default="http://localhost:5173")
 
+    # Cookie security settings
+    COOKIE_SECURE: bool = Field(default=True)  # Set to True in production (HTTPS)
+
     # Note: JWT signing now uses dynamically generated RSA + Dilithium keys
     # No SECRET_KEY needed - keys are ephemeral and regenerated on container restart 
 

@@ -69,7 +69,10 @@ def initialize_default_user():
 
     except Exception as e:
         logger.error(f"❌ Failed to create default user: {e}")
+        logger.warning("⚠️  Application will continue startup. You can:")
+        logger.warning("   1. Wait for DB to be ready and restart the backend")
+        logger.warning("   2. Register a user manually via /api/auth/register")
         db.rollback()
-        raise
+        # Don't raise - allow app to start even if default user creation fails
     finally:
         db.close()
