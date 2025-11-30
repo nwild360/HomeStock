@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import StatBoxes from './StatBoxes';
 import ItemsTable from './ItemsTable.tsx';
 import type { InventoryType } from '../../types/InventoryTypes.ts';
-import { getItems, updateStock, deleteItem, ItemsError } from '../../services/itemsService';
-import { AuthError } from '../../services/authService';
+import { getItems, updateStock, deleteItem, ItemsError } from '../../services/ItemsService.ts';
+import { AuthError } from '../../services/AuthService.ts';
 
 interface InventoryItem {
   id: string;

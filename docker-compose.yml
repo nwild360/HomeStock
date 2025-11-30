@@ -3,7 +3,7 @@ services:
 
   db:
     image: postgres:17
-    container_name: homestock_db
+    container_name: homestock-db
     restart: unless-stopped
 
     environment:

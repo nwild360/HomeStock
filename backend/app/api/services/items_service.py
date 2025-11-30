@@ -28,6 +28,7 @@ class Categories(Base):
     __table_args__ = {"schema": "homestock"}
     id = Column(BigInteger, primary_key=True)
     name = Column(String)
+    description = Column(String)
 
 class Units(Base):
     __tablename__ = "units"

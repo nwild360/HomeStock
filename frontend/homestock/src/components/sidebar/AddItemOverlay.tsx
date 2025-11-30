@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { InventoryType } from '../../types/InventoryTypes.ts';
 import { MENU_ITEMS } from '../../types/InventoryTypes.ts';
-import { createItem, ItemsError } from '../../services/itemsService';
-import { AuthError } from '../../services/authService';
+import { createItem, ItemsError } from '../../services/ItemsService.ts';
+import { AuthError } from '../../services/AuthService.ts';
 
 interface AddItemOverlayProps {
   isOpen: boolean;

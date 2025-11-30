@@ -44,15 +44,36 @@ class StockPatch(BaseModel):
     delta: Optional[Decimal] = Field(default=None, description="Mutually exclusive with new_qty")
     new_qty: Optional[Decimal] = Field(default=None, description="Mutually exclusive with delta")
 
-# ---- Lookups ----
+# ---- Data Tags ----
+class CategoryCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+class UnitCreate(BaseModel):
+    name: str
+    abbreviation: Optional[str] = None    
+
 class CategoryOut(BaseModel):
     id: int
     name: str
+    description: Optional[str] = None
 
 class UnitOut(BaseModel):
     id: int
     name: str
     abbreviation: Optional[str] = None
+
+class CategoriesPage(BaseModel):
+    items: List[CategoryOut]
+    page: int = 1
+    page_size: int = 10
+    total: int = 0
+
+class UnitsPage(BaseModel):
+    items: List[UnitOut]
+    page: int = 1
+    page_size: int = 10
+    total: int = 0
 
 # ---- Foods search ----
 class FoodHit(BaseModel):

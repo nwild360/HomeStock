@@ -5,7 +5,7 @@ import SideBar from "./components/sidebar/SideBar.tsx"
 import AddItemOverlay from './components/sidebar/AddItemOverlay.tsx';
 import InventoryScreen from './components/main/InventoryScreen.tsx'
 import type { InventoryType } from './types/InventoryTypes.ts'
-import { login, logout, AuthError } from './services/authService'
+import { login, logout, AuthError } from './services/AuthService.ts'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
