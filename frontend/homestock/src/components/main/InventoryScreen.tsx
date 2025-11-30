@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import StatBoxes from './StatBoxes';
 import ItemsTable from './ItemsTable.tsx';
 import type { InventoryType } from '../../types/InventoryTypes.ts';
+import { getItems, updateStock, deleteItem, ItemsError } from '../../services/itemsService';
+import { AuthError } from '../../services/authService';
 
 interface InventoryItem {
   id: string;
@@ -13,31 +15,62 @@ interface InventoryItem {
 
 interface InventoryScreenProps {
   screenType: InventoryType;
+  refreshKey?: number;
+  onRefresh?: () => void;
 }
 
-// Mock data - replace with API call later
-const mockItems: InventoryItem[] = [
-  { id: '1', name: 'Milk', category: 'Dairy', quantity: 2, unit: 'Gallons' },
-  { id: '2', name: 'Bread', category: 'Bakery', quantity: 1, unit: 'Loaves' },
-  { id: '3', name: 'Eggs', category: 'Dairy', quantity: 12, unit: 'Count' },
-  { id: '4', name: 'Chicken Breast', category: 'Meat', quantity: 3, unit: 'Pounds' },
-  { id: '5', name: 'Rice', category: 'Grains', quantity: 5, unit: 'Pounds' },
-  { id: '6', name: 'Tomatoes', category: 'Produce', quantity: 6, unit: 'Count' },
-  { id: '7', name: 'Pasta', category: 'Grains', quantity: 2, unit: 'Boxes' },
-  { id: '8', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
-  { id: '9', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
-  { id: '10', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
-  { id: '11', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
-  { id: '12', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
-  { id: '13', name: 'Cheese', category: 'Dairy', quantity: 1, unit: 'Blocks' },
-  { id: '14', name: 'Cheese Curds', category: 'Dairy', quantity: 1, unit: 'Blocks' },
-];
-
-const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType }) => {
-  const [items, setItems] = useState<InventoryItem[]>(mockItems);
+const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKey, onRefresh }) => {
+  const [items, setItems] = useState<InventoryItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 10;
+
+  // Fetch items from backend on mount and when screenType changes
+  useEffect(() => {
+    const fetchItems = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // Fetch all items (we'll filter by type client-side for now)
+        const response = await getItems(1, 100); // Fetch more items for client-side filtering
+
+        // Filter items by screenType
+        const filteredByType = response.items.filter(
+          (item) => item.item_type === screenType
+        );
+
+        // Transform backend items to frontend format
+        const transformedItems: InventoryItem[] = filteredByType.map((item) => ({
+          id: item.item_id.toString(),
+          name: item.item_name,
+          category: item.category_name || 'Uncategorized',
+          quantity: Number(item.quantity),
+          unit: item.unit_name || '',
+        }));
+
+        setItems(transformedItems);
+        setTotalItems(transformedItems.length);
+      } catch (err) {
+        if (err instanceof AuthError) {
+          // User not authenticated - redirect to login
+          console.error('Not authenticated, redirecting to login...');
+          window.location.reload(); // This will show the login screen
+        } else if (err instanceof ItemsError) {
+          setError(err.message);
+        } else {
+          setError('An unexpected error occurred while loading items');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchItems();
+  }, [screenType, refreshKey]);
 
   // Filter items based on search
   const filteredItems = items.filter(item =>
@@ -51,31 +84,89 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType }) => {
   const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
 
   // Calculate stats
-  const totalItems = items.length;
-  const expiringItems = 100;
-  const expiredItems = 100;
+  const expiringItems = 0; // TODO: Implement when expiration dates are added
+  const expiredItems = 0; // TODO: Implement when expiration dates are added
 
   // Handlers
-  const handleQuantityChange = (id: string, newQuantity: number) => {
+  const handleQuantityChange = async (id: string, newQuantity: number) => {
     if (newQuantity < 0) return;
-    
-    setItems(prevItems => 
-      prevItems.map(item => 
+
+    // Optimistic update - update UI immediately
+    setItems(prevItems =>
+      prevItems.map(item =>
         item.id === id ? { ...item, quantity: newQuantity } : item
       )
     );
-    
-    // TODO: Add API call here when backend is ready
-    // await fetch(`/api/inventory/${id}`, {
-    //   method: 'PUT',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ quantity: newQuantity })
-    // });
+
+    try {
+      // Call API to update stock
+      await updateStock(Number(id), { new_qty: newQuantity });
+    } catch (err) {
+      if (err instanceof AuthError) {
+        console.error('Not authenticated, redirecting to login...');
+        window.location.reload();
+      } else {
+        console.error('Failed to update quantity:', err);
+        // Revert optimistic update on error
+        if (onRefresh) {
+          onRefresh();
+        }
+      }
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setItems(items.filter(item => item.id !== id));
+  const handleDelete = async (id: string) => {
+    // Optimistic update - remove from UI immediately
+    setItems(prevItems => prevItems.filter(item => item.id !== id));
+
+    try {
+      // Call API to delete item
+      await deleteItem(Number(id));
+    } catch (err) {
+      if (err instanceof AuthError) {
+        console.error('Not authenticated, redirecting to login...');
+        window.location.reload();
+      } else {
+        console.error('Failed to delete item:', err);
+        // Revert optimistic update on error
+        if (onRefresh) {
+          onRefresh();
+        }
+      }
+    }
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 overflow-auto flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading inventory...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 overflow-auto flex items-center justify-center">
+        <div className="text-center">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <p className="font-bold">Error</p>
+            <p>{error}</p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 overflow-auto">

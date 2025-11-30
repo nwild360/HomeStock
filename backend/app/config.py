@@ -13,8 +13,12 @@ class Settings(BaseSettings):
     # CORS settings
     CORS_ORIGINS: str = Field(default="http://localhost:5173")
 
-    # JWT Secret Key for token signing (required, must be secure random string)
-    SECRET_KEY: str = Field(..., min_length=32) 
+    # Cookie security settings
+    COOKIE_SECURE: bool = Field(default=True)  # Set to True in production (HTTPS)
+    COOKIE_SAMESITE: str = Field(default="lax")  # "strict", "lax", or "none"
+
+    # Note: JWT signing now uses dynamically generated RSA + Dilithium keys
+    # No SECRET_KEY needed - keys are ephemeral and regenerated on container restart 
 
     @property
     def cors_origins_list(self) -> List[str]:

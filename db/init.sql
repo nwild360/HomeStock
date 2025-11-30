@@ -20,7 +20,7 @@ REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 -- Create users table first
 CREATE TABLE IF NOT EXISTS homestock.users (
     id BIGSERIAL PRIMARY KEY,
-    username TEXT NOT NULL UNIQUE CHECK (
+    username TEXT NOT NULL UNIQUE CHECK ( 
         length(username) BETWEEN 3 AND 50 AND
         username ~ '^[a-zA-Z0-9_-]+$'  -- alphanumeric, underscore, hyphen only
     ),

@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Numeric, String, select, func
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Numeric, String, select, func, text
 from sqlalchemy.orm import declarative_base, Session
 from app.api.schemas import ItemCreate, ItemOut, ItemsPage, ItemPatch, StockPatch
 from decimal import Decimal
@@ -20,8 +20,8 @@ class Items(Base):
     unit_id = Column(BigInteger, ForeignKey("homestock.units.id"))
     mealie_food_id = Column(String)
     notes = Column(String)
-    created_at = Column(DateTime(timezone=True))
-    updated_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Categories(Base):
     __tablename__ = "categories"
@@ -132,8 +132,6 @@ def create_item(session: Session, item: ItemCreate) -> ItemOut:
             unit_id=unit_id,
             notes=item.notes,
             mealie_food_id=item.mealie_food_id,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
         )
         session.add(new_item)
         session.commit()
@@ -287,7 +285,6 @@ def update_item(session: Session, item_id: int, patch: ItemPatch, if_unmodified_
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="No valid fields provided for update"
             )
-        item.updated_at = datetime.now().astimezone()
         session.add(item)
         session.commit()
         session.refresh(item)
@@ -320,6 +317,106 @@ def update_item(session: Session, item_id: int, patch: ItemPatch, if_unmodified_
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error updating item"
         )
+
+# PATCH /items/{id}/stock service: Update item stock quantity
+def patch_stock(session: Session, item_id: int, stock_patch: StockPatch, if_unmodified_since: str | None = None) -> ItemOut:
+    """
+    Update an item's stock quantity using either delta or new_qty.
+    Uses optimistic concurrency control with If-Unmodified-Since header.
+    Returns updated ItemOut Pydantic model for API response.
+    Raises HTTPException on error.
+    """
+    try:
+        item = session.get(Items, item_id)
+        if not item:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Item not found"
+            )
+
+        # Validate mutually exclusive fields
+        if stock_patch.delta is not None and stock_patch.new_qty is not None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Cannot specify both delta and new_qty"
+            )
+
+        if stock_patch.delta is None and stock_patch.new_qty is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Must specify either delta or new_qty"
+            )
+
+        # Optimistic locking check
+        if if_unmodified_since:
+            try:
+                client_timestamp = datetime.fromisoformat(if_unmodified_since)
+                if item.updated_at and item.updated_at > client_timestamp:
+                    raise HTTPException(
+                        status_code=status.HTTP_412_PRECONDITION_FAILED,
+                        detail="Item has been modified since the provided timestamp"
+                    )
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid If-Unmodified-Since header format"
+                )
+
+        # Calculate new quantity
+        current_qty = item.quantity if item.quantity is not None else Decimal("0")
+
+        if stock_patch.delta is not None:
+            new_quantity = current_qty + stock_patch.delta
+        else:  # new_qty is not None
+            new_quantity = stock_patch.new_qty
+
+        # Validate new quantity is non-negative
+        if new_quantity < 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Quantity cannot be negative"
+            )
+
+        # Update quantity (updated_at will be set automatically by DB trigger)
+        item.quantity = new_quantity
+
+        session.add(item)
+        session.commit()
+        session.refresh(item)
+
+        # Get category/unit names for output
+        category_name = None
+        if item.category_id:
+            category = session.get(Categories, item.category_id)
+            category_name = category.name if category else None
+
+        unit_name = None
+        if item.unit_id:
+            unit = session.get(Units, item.unit_id)
+            unit_name = unit.name if unit else None
+
+        return ItemOut(
+            item_id=item.id,
+            item_name=item.name,
+            item_type=item.type,
+            category_name=category_name,
+            mealie_food_id=item.mealie_food_id,
+            notes=item.notes,
+            quantity=item.quantity if item.quantity is not None else Decimal("0"),
+            unit_name=unit_name,
+            created_at=item.created_at,
+            updated_at=item.updated_at
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error updating stock"
+        )
+
 
 # DELETE /items/{id} service: Delete an item by ID
 def delete_item(session: Session, item_id: int) -> None:

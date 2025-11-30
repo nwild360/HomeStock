@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import type { InventoryType } from '../../types/InventoryTypes.ts';
 import { MENU_ITEMS } from '../../types/InventoryTypes.ts';
+import { createItem, ItemsError } from '../../services/itemsService';
+import { AuthError } from '../../services/authService';
 
 interface AddItemOverlayProps {
   isOpen: boolean;
   onClose: () => void;
+  onItemCreated?: () => void; // Callback to refresh the list
 }
 
-function AddItemOverlay({ isOpen, onClose }: AddItemOverlayProps) {
+function AddItemOverlay({ isOpen, onClose, onItemCreated }: AddItemOverlayProps) {
   const [formData, setFormData] = useState({
     type: '' as InventoryType | '',
     name: '',
@@ -16,29 +19,60 @@ function AddItemOverlay({ isOpen, onClose }: AddItemOverlayProps) {
     unit: '',
     notes: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // TODO: Add API call here when backend is ready
-    // await fetch('/api/inventory', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(formData)
-    // });
-    
-    console.log('Submitting form data:', formData);
-    
-    // Reset form and close
-    setFormData({
-      type: '',
-      name: '',
-      category: '',
-      quantity: 1,
-      unit: '',
-      notes: ''
-    });
-    onClose();
+
+    if (!formData.type) {
+      setError('Please select an item type');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // Call the API to create the item
+      await createItem({
+        item_name: formData.name,
+        item_type: formData.type,
+        category_name: formData.category || null,
+        quantity: formData.quantity,
+        unit_name: formData.unit || null,
+        notes: formData.notes || null,
+      });
+
+      // Reset form
+      setFormData({
+        type: '',
+        name: '',
+        category: '',
+        quantity: 1,
+        unit: '',
+        notes: ''
+      });
+
+      // Notify parent to refresh the list
+      if (onItemCreated) {
+        onItemCreated();
+      }
+
+      // Close overlay
+      onClose();
+    } catch (err) {
+      if (err instanceof AuthError) {
+        setError('Not authenticated. Please log in again.');
+        setTimeout(() => window.location.reload(), 2000);
+      } else if (err instanceof ItemsError) {
+        setError(err.message);
+      } else {
+        setError('Failed to create item. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleQuantityChange = (value: string) => {
@@ -189,20 +223,29 @@ function AddItemOverlay({ isOpen, onClose }: AddItemOverlayProps) {
             />
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
+
           {/* Buttons */}
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              disabled={isSubmitting}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-slate-950 text-white rounded-lg hover:bg-lime-400 hover:text-slate-950 transition-colors font-medium"
+              disabled={isSubmitting}
+              className="flex-1 px-4 py-2 bg-slate-950 text-white rounded-lg hover:bg-lime-400 hover:text-slate-950 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Add Item
+              {isSubmitting ? 'Adding...' : 'Add Item'}
             </button>
           </div>
         </form>
