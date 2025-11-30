@@ -31,14 +31,14 @@ class ItemCreate(BaseModel):
     unit_name: Optional[str] = Field(default=None, example=None)
     notes: Optional[str] = Field(default="", max_length=1000)  # Make notes optional with empty string default
     mealie_food_id: Optional[str] = None  # Add mealie_food_id as optional
-    created_at: datetime
+    #created_at: datetime
 
 class ItemPatch(BaseModel):
     name: Optional[str] = None
     category_name: Optional[int] = None
     quantity: Optional[Decimal] = Field(default=None, ge=0)
     notes: Optional[str] = None
-    updated_at: datetime
+    #updated_at: datetime
 
 class StockPatch(BaseModel):
     delta: Optional[Decimal] = Field(default=None, description="Mutually exclusive with new_qty")

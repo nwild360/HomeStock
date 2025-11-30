@@ -35,8 +35,9 @@ def register(
 
 @router.post(
     "/token",
+    response_model=Token,
     summary="Login to get access token",
-    description="Authenticate with username and password. Sets httpOnly cookie with JWT (30 min expiry)."
+    description="Authenticate with username and password. Sets httpOnly cookie AND returns JWT in response body (30 min expiry)."
 )
 def login(
     response: Response,
@@ -61,22 +62,19 @@ def login(
     """
     token_data = auth_service.login_user(db, form_data.username, form_data.password)
 
-    # Set httpOnly cookie with JWT
+    # Set httpOnly cookie with JWT (for frontend)
     response.set_cookie(
         key="access_token",
         value=token_data.access_token,
         httponly=True,        # Prevents JavaScript access (XSS protection)
         secure=settings.COOKIE_SECURE,  # Configured via .env (True for HTTPS/prod, False for HTTP/dev)
-        samesite="strict",    # CSRF protection - blocks cross-site requests
+        samesite=settings.COOKIE_SAMESITE,  # Configured via .env ("lax" for dev, "strict" for prod)
         max_age=1800,         # 30 minutes (matches JWT expiry)
         path="/",             # Available for all routes
     )
 
-    return {
-        "message": "Login successful",
-        "token_type": "bearer",
-        "username": form_data.username
-    }
+    # Return token in response body (for Swagger UI and API clients)
+    return token_data
 
 
 @router.get(

@@ -15,6 +15,7 @@ class Settings(BaseSettings):
 
     # Cookie security settings
     COOKIE_SECURE: bool = Field(default=True)  # Set to True in production (HTTPS)
+    COOKIE_SAMESITE: str = Field(default="lax")  # "strict", "lax", or "none"
 
     # Note: JWT signing now uses dynamically generated RSA + Dilithium keys
     # No SECRET_KEY needed - keys are ephemeral and regenerated on container restart 

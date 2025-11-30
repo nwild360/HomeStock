@@ -11,6 +11,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<InventoryType>('food');
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // Trigger re-fetch when incremented
 
   const handleNavigate = (screen: InventoryType) => {
     setCurrentScreen(screen);
@@ -66,8 +67,13 @@ function App() {
       <AddItemOverlay
         isOpen={isAddItemOpen}
         onClose={() => setIsAddItemOpen(false)}
+        onItemCreated={() => setRefreshKey(prev => prev + 1)}
       />
-      <InventoryScreen screenType={currentScreen}/>
+      <InventoryScreen
+        screenType={currentScreen}
+        refreshKey={refreshKey}
+        onRefresh={() => setRefreshKey(prev => prev + 1)}
+      />
     </div>
   )
 }
