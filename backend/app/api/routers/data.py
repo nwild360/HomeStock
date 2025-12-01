@@ -1,0 +1,143 @@
+from typing import Optional, Literal
+from fastapi import APIRouter, Query, Depends, Path, Header, status, Request
+from sqlalchemy.orm import Session
+from app.api.schemas import CategoryCreate, UnitCreate, CategoryOut, UnitOut, CategoriesPage, UnitsPage
+from app.api.services import data_service
+from app.dependencies.db_session import get_dbsession
+from app.dependencies.auth import require_auth
+
+router = APIRouter(prefix="/data", tags=["data"])
+
+# GET /categories
+@router.get(
+    "/categories",
+    response_model=CategoriesPage,
+)
+def get_categories(
+    page: int = Query(1, ge=1, le=10000),
+    page_size: int = Query(20, ge=1, le=1000),
+    db: Session = Depends(get_dbsession),
+    current_user: dict = Depends(require_auth)
+):
+    return data_service.get_categories(db, page=page, page_size=page_size)
+
+# GET /units
+@router.get(
+    "/units",
+    response_model=UnitsPage,
+)
+def get_units(
+    page: int = Query(1, ge=1, le=10000),
+    page_size: int = Query(20, ge=1, le=1000),
+    db: Session = Depends(get_dbsession),
+    current_user: dict = Depends(require_auth)
+):
+    return data_service.get_units(db, page=page, page_size=page_size)
+
+# GET /categories/{id}
+@router.get(
+    "/categories/{id}",
+    response_model=CategoryOut,
+)
+def get_category(
+    id: int,
+    db: Session = Depends(get_dbsession),
+    current_user: dict = Depends(require_auth)
+):
+    return data_service.get_category(db, id)
+
+# GET /units/{id}
+@router.get(
+    "/units/{id}",
+    response_model=UnitOut,
+)
+def get_unit(
+    id: int,
+    db: Session = Depends(get_dbsession),
+    current_user: dict = Depends(require_auth)
+):
+    return data_service.get_unit(db, id)
+
+# POST /categories
+@router.post(
+    "/categories",
+    response_model=CategoryOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_category(
+    request: Request,
+    body: CategoryCreate,
+    db: Session = Depends(get_dbsession),
+    current_user: dict = Depends(require_auth)
+):
+    result = data_service.create_category(db, body)
+
+    return result
+
+# POST /units
+@router.post(
+    "/units",
+    response_model=UnitOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_unit(
+    request: Request,
+    body: UnitCreate,
+    db: Session = Depends(get_dbsession),
+    current_user: dict = Depends(require_auth)
+):
+    result = data_service.create_unit(db, body)
+
+    return result
+
+# PATCH /categories/{id}
+@router.patch(
+    "/categories/{id}",
+    response_model=CategoryOut,
+)
+def update_category(
+    id: int,
+    body: CategoryCreate,
+    db: Session = Depends(get_dbsession),
+    current_user: dict = Depends(require_auth),
+    if_unmodified_since: str | None = Header(default=None, alias="If-Unmodified-Since"),
+):
+    return data_service.update_category(db, id, body, if_unmodified_since)
+
+# PATCH /units/{id}
+@router.patch(
+    "/units/{id}",
+    response_model=UnitOut,
+)
+def update_unit(
+    id: int,
+    body: UnitCreate,
+    db: Session = Depends(get_dbsession),
+    current_user: dict = Depends(require_auth),
+    if_unmodified_since: str | None = Header(default=None, alias="If-Unmodified-Since"),
+):
+    return data_service.update_unit(db, id, body, if_unmodified_since)
+
+# DELETE /categories 
+@router.delete(
+    "/categories/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_category(
+    id: int,
+    db: Session = Depends(get_dbsession),
+    current_user: dict = Depends(require_auth)
+):
+    data_service.delete_category(db, id)
+
+# DELETE /units
+@router.delete(
+    "/units/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_unit(
+    id: int,
+    db: Session = Depends(get_dbsession),
+    current_user: dict = Depends(require_auth)
+):
+    data_service.delete_unit(db, id)

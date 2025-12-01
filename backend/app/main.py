@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from app.api.routers import meta, items, auth
+from app.api.routers import meta, items, auth, data
 from app.config import get_settings
 from app.init.default_user import initialize_default_user
 
@@ -40,3 +40,4 @@ app.add_middleware(
 app.include_router(meta.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(items.router, prefix="/api")
+app.include_router(data.router, prefix="/api")

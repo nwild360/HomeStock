@@ -4,16 +4,17 @@ import LoginScreen from './components/login/LoginScreen.tsx'
 import SideBar from "./components/sidebar/SideBar.tsx"
 import AddItemOverlay from './components/sidebar/AddItemOverlay.tsx';
 import InventoryScreen from './components/main/InventoryScreen.tsx'
-import type { InventoryType } from './types/InventoryTypes.ts'
-import { login, logout, AuthError } from './services/authService'
+import DataScreen from './components/main/data/DataScreen.tsx'
+import type { ScreenType, InventoryType } from './types/InventoryTypes.ts'
+import { login, logout, AuthError } from './services/AuthService.ts'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentScreen, setCurrentScreen] = useState<InventoryType>('food');
+  const [currentScreen, setCurrentScreen] = useState<ScreenType>('food');
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0); // Trigger re-fetch when incremented
 
-  const handleNavigate = (screen: InventoryType) => {
+  const handleNavigate = (screen: ScreenType) => {
     setCurrentScreen(screen);
   };
 
@@ -69,11 +70,18 @@ function App() {
         onClose={() => setIsAddItemOpen(false)}
         onItemCreated={() => setRefreshKey(prev => prev + 1)}
       />
-      <InventoryScreen
-        screenType={currentScreen}
-        refreshKey={refreshKey}
-        onRefresh={() => setRefreshKey(prev => prev + 1)}
-      />
+      {currentScreen === 'data' ? (
+        <DataScreen
+          refreshKey={refreshKey}
+          onRefresh={() => setRefreshKey(prev => prev + 1)}
+        />
+      ) : (
+        <InventoryScreen
+          screenType={currentScreen as InventoryType}
+          refreshKey={refreshKey}
+          onRefresh={() => setRefreshKey(prev => prev + 1)}
+        />
+      )}
     </div>
   )
 }

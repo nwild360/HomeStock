@@ -6,7 +6,7 @@
  */
 
 import type { Item, ItemsPage, ItemCreate, ItemPatch, StockPatch } from '../types/ItemTypes';
-import { AuthError } from './authService';
+import { AuthError } from './AuthService'; 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 

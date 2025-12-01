@@ -2,19 +2,19 @@ import { useState } from 'react';
 import logo from '../../assets/HomeStock.svg';
 import AddItemButton from './AddItemButton.tsx';
 import NavMenu from './NavMenu.tsx';
-import type { InventoryType } from '../../types/InventoryTypes.ts';
+import type { ScreenType } from '../../types/InventoryTypes.ts';
 
 interface SidebarProps {
-  currentScreen: InventoryType;
+  currentScreen: ScreenType;
   onAddItem?: () => void;
-  onNavigate?: (screen: InventoryType) => void;
+  onNavigate?: (screen: ScreenType) => void;
   onLogout?: () => void;
 }
 
 function Sidebar({ currentScreen, onAddItem, onNavigate, onLogout }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-    const handleNavigate = (screen: InventoryType) => {
+    const handleNavigate = (screen: ScreenType) => {
     onNavigate?.(screen);
     setIsOpen(false);
   };

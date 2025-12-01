@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { InventoryType } from '../../types/InventoryTypes.ts';
-import { MENU_ITEMS } from '../../types/InventoryTypes.ts';
-import { createItem, ItemsError } from '../../services/itemsService';
-import { AuthError } from '../../services/authService';
+import { INVENTORY_ITEMS } from '../../types/InventoryTypes.ts';
+import { createItem, ItemsError } from '../../services/ItemsService.ts';
+import { AuthError } from '../../services/AuthService.ts';
 
 interface AddItemOverlayProps {
   isOpen: boolean;
@@ -135,7 +135,7 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated }: AddItemOverlayProps)
               required
             >
               <option value="">Select a type...</option>
-              {MENU_ITEMS.map((item) => (
+              {INVENTORY_ITEMS.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.label}
                 </option>
