@@ -107,3 +107,12 @@ class UserLogin(BaseModel):
     """Request model for user login (used with form data)."""
     username: str
     password: str
+
+class PasswordChange(BaseModel):
+    """Request model for changing user password."""
+    current_password: str = Field(..., min_length=1, description="Current password for verification")
+    new_password: str = Field(..., min_length=8, max_length=100, pattern=r'^[a-zA-Z0-9_-]+$', description="New password (8-100 chars, alphanumeric with _-)")
+
+class UsernameChange(BaseModel):
+    """Request model for changing username."""
+    new_username: str = Field(..., min_length=3, max_length=50, pattern=r'^[a-zA-Z0-9_-]+$', description="New username (3-50 chars, alphanumeric with _-)")

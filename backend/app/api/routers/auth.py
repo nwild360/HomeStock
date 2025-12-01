@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from app.api.schemas import Token, UserCreate, UserOut
+from app.api.schemas import Token, UserCreate, UserOut, PasswordChange, UsernameChange
 from app.api.services import auth_service
 from app.dependencies.db_session import get_dbsession
 from app.dependencies.auth import require_auth
@@ -20,7 +20,8 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 )
 def register(
     user_data: UserCreate,
-    db: Session = Depends(get_dbsession)
+    db: Session = Depends(get_dbsession),
+    current_user: dict = Depends(require_auth)
 ):
     """
     Register a new user.
@@ -78,6 +79,26 @@ def login(
 
 
 @router.get(
+    "/users",
+    response_model=list[UserOut],
+    summary="Get all users",
+    description="Get a list of all registered users (requires authentication)."
+)
+def get_all_users(
+    current_user: dict = Depends(require_auth),
+    db: Session = Depends(get_dbsession)
+):
+    """
+    Get all users in the system.
+
+    Requires valid JWT token in httpOnly cookie.
+    """
+    from app.dependencies.auth import User
+    users = db.query(User).all()
+    return [UserOut(id=user.id, username=user.username) for user in users]
+
+
+@router.get(
     "/me",
     response_model=UserOut,
     summary="Get current user info",
@@ -116,3 +137,134 @@ def logout(response: Response):
     )
 
     return {"message": "Logged out successfully"}
+
+
+@router.patch(
+    "/me/password",
+    summary="Change user password",
+    description="Change the current user's password. Requires current password verification. Invalidates all sessions."
+)
+def change_password(
+    password_data: PasswordChange,
+    response: Response,
+    current_user: dict = Depends(require_auth),
+    db: Session = Depends(get_dbsession)
+):
+    """
+    Change password for the authenticated user.
+
+    Security features (OWASP compliant):
+    - Requires current password verification (prevents session hijacking abuse)
+    - New password must be different from current password
+    - Invalidates all existing sessions by clearing httpOnly cookie
+    - Password complexity enforced by Pydantic schema (8-100 chars, alphanumeric with _-)
+    - Hashed with Argon2id (64MB memory, 3 iterations, 4 threads)
+
+    Args:
+    - **current_password**: Current password for verification
+    - **new_password**: New password (8-100 chars, alphanumeric with underscores/hyphens)
+
+    Returns:
+    - Success message
+
+    Raises:
+    - 401: Current password is incorrect
+    - 400: New password same as current or validation failed
+    - 500: Server error
+    """
+    result = auth_service.change_password(db, current_user["id"], password_data)
+
+    # Clear httpOnly cookie to invalidate current session
+    # User must re-login with new password
+    if result.get("invalidate_sessions"):
+        response.delete_cookie(
+            key="access_token",
+            path="/",
+            samesite=settings.COOKIE_SAMESITE
+        )
+
+    return {"message": result["message"]}
+
+
+@router.patch(
+    "/me/username",
+    response_model=UserOut,
+    summary="Change username",
+    description="Change the current user's username. Must be unique."
+)
+def change_username(
+    username_data: UsernameChange,
+    current_user: dict = Depends(require_auth),
+    db: Session = Depends(get_dbsession)
+):
+    """
+    Change username for the authenticated user.
+
+    Security features:
+    - Requires valid authentication (JWT token)
+    - Validates uniqueness (prevents conflicts)
+    - Username complexity enforced by Pydantic schema (3-50 chars, alphanumeric with _-)
+    - New username must be different from current username
+
+    Args:
+    - **new_username**: New username (3-50 chars, alphanumeric with underscores/hyphens)
+
+    Returns:
+    - Updated user information (without password)
+
+    Raises:
+    - 409: Username already exists
+    - 400: New username same as current or validation failed
+    - 500: Server error
+
+    Note: Does NOT invalidate existing sessions. Current JWT token remains valid
+    until expiry, but will contain the old username in the 'sub' claim.
+    """
+    return auth_service.change_username(db, current_user["id"], username_data)
+
+
+@router.delete(
+    "/users/{user_id}",
+    summary="Delete a user",
+    description="Delete a user by ID (requires authentication)."
+)
+def delete_user(
+    user_id: int,
+    current_user: dict = Depends(require_auth),
+    db: Session = Depends(get_dbsession)
+):
+    """
+    Delete a user by ID.
+
+    Args:
+    - **user_id**: The ID of the user to delete
+
+    Returns:
+    - Success message
+
+    Raises:
+    - 403: Cannot delete yourself
+    - 404: User not found
+    - 500: Server error
+    """
+    from app.dependencies.auth import User
+
+    # Prevent users from deleting themselves
+    if current_user["id"] == user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot delete your own account"
+        )
+
+    # Find and delete the user
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    db.delete(user)
+    db.commit()
+
+    return {"message": f"User '{user.username}' deleted successfully"}

@@ -5,6 +5,7 @@ import SideBar from "./components/sidebar/SideBar.tsx"
 import AddItemOverlay from './components/sidebar/AddItemOverlay.tsx';
 import InventoryScreen from './components/main/InventoryScreen.tsx'
 import DataScreen from './components/main/data/DataScreen.tsx'
+import UserScreen from './components/users/UserScreen.tsx'
 import type { ScreenType, InventoryType } from './types/InventoryTypes.ts'
 import { login, logout, AuthError } from './services/AuthService.ts'
 
@@ -72,6 +73,11 @@ function App() {
       />
       {currentScreen === 'data' ? (
         <DataScreen
+          refreshKey={refreshKey}
+          onRefresh={() => setRefreshKey(prev => prev + 1)}
+        />
+      ) : currentScreen === 'users' ? (
+        <UserScreen
           refreshKey={refreshKey}
           onRefresh={() => setRefreshKey(prev => prev + 1)}
         />
