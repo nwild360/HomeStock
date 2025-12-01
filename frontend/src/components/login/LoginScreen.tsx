@@ -121,7 +121,7 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
           alt="HomeStock Logo"
           className="w-20 h-20 md:w-24 md:h-24"
         />
-        <h1 className="text-4xl md:text-5xl font-semibold text-[#A3E635]">
+        <h1 className="text-5xl md:text-6xl font-semibold text-[#A3E635]">
           HomeStock
         </h1>
       </div>

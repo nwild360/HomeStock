@@ -7,6 +7,7 @@ interface InventoryItem {
   category: string;
   quantity: number;
   unit: string;
+  notes: string;
 }
 
 interface ItemsTableProps {
@@ -61,6 +62,7 @@ function ItemsTable({ items, onQuantityChange, onEdit, onDelete }: ItemsTablePro
               <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900">Category</th>
               <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-center text-xs md:text-base font-semibold text-gray-900">Quantity</th>
               <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900">Unit(s)</th>
+              <th className="hidden lg:table-cell px-4 py-3 text-left text-base font-semibold text-gray-900">Notes</th>
               <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-center text-xs md:text-base font-semibold text-gray-900">Actions</th>
             </tr>
           </thead>
@@ -114,6 +116,9 @@ function ItemsTable({ items, onQuantityChange, onEdit, onDelete }: ItemsTablePro
                   </div>
                 </td>
                 <td className="px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-600">{item.unit}</td>
+                <td className="hidden lg:table-cell px-4 py-3 text-base text-gray-600 max-w-xs truncate" title={item.notes}>
+                  {item.notes || '-'}
+                </td>
                 <td className="px-2 py-2 md:px-4 md:py-3 text-center">
                   <div className="flex items-center justify-center gap-1 md:gap-2">
                     <button

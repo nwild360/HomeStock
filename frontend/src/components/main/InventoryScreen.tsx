@@ -13,6 +13,7 @@ interface InventoryItem {
   category: string;
   quantity: number;
   unit: string;
+  notes: string;
 }
 
 interface InventoryScreenProps {
@@ -57,6 +58,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
           category: item.category_name || 'Uncategorized',
           quantity: Number(item.quantity),
           unit: item.unit_name || '',
+          notes: item.notes || '',
         }));
 
         setItems(transformedItems);
@@ -209,7 +211,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
   return (
     <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 overflow-auto">
       {/* Header */}
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-8 capitalize">
+      <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4 md:mb-8 capitalize">
         {screenType} Inventory
       </h1>
 

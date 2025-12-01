@@ -188,7 +188,7 @@ const DataScreen: React.FC<DataScreenProps> = ({
   return (
     <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 overflow-auto">
       {/* Header */}
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-8">
+      <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4 md:mb-8">
         Data Management
       </h1>
 

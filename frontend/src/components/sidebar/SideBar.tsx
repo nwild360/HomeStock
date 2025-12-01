@@ -26,10 +26,10 @@ function Sidebar({ currentScreen, onAddItem, onNavigate, onLogout }: SidebarProp
   
   return (
     <div className="flex min-h-screen">
-      {/* Mobile Menu Button */}
+      {/* Mobile Menu Button - Right Side */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-50 p-2 bg-gray-900 text-white rounded-lg md:hidden"
+        className="fixed top-4 right-4 z-50 p-2 bg-gray-900 text-white rounded-lg md:hidden"
         aria-label="Toggle menu"
       >
         <div className="w-6 h-5 flex flex-col justify-between">
