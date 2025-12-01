@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import StatBoxes from './StatBoxes';
 import ItemsTable from './ItemsTable.tsx';
+import AddItemOverlay from '../sidebar/AddItemOverlay.tsx';
 import type { InventoryType } from '../../types/InventoryTypes.ts';
-import { getItems, updateStock, deleteItem, ItemsError } from '../../services/ItemsService.ts';
+import { getItems, getItem, updateStock, deleteItem, ItemsError } from '../../services/ItemsService.ts';
 import { AuthError } from '../../services/AuthService.ts';
+import type { Item } from '../../types/ItemTypes.ts';
 
 interface InventoryItem {
   id: string;
@@ -20,12 +22,14 @@ interface InventoryScreenProps {
 }
 
 const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKey, onRefresh }) => {
+  const [backendItems, setBackendItems] = useState<Item[]>([]); // Store original backend items
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalItems, setTotalItems] = useState(0);
+  const [editingItem, setEditingItem] = useState<Item | undefined>(undefined);
   const itemsPerPage = 10;
 
   // Fetch items from backend on mount and when screenType changes
@@ -42,6 +46,9 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
         const filteredByType = response.items.filter(
           (item) => item.item_type === screenType
         );
+
+        // Store original backend items
+        setBackendItems(filteredByType);
 
         // Transform backend items to frontend format
         const transformedItems: InventoryItem[] = filteredByType.map((item) => ({
@@ -121,6 +128,26 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
         // Revert optimistic update on error
         if (onRefresh) {
           onRefresh();
+        }
+      }
+    }
+  };
+
+  const handleEdit = async (id: string) => {
+    try {
+      // Fetch the latest item data from the server
+      const item = await getItem(Number(id));
+      setEditingItem(item);
+    } catch (err) {
+      if (err instanceof AuthError) {
+        console.error('Not authenticated, redirecting to login...');
+        window.location.reload();
+      } else {
+        console.error('Failed to fetch item for editing:', err);
+        // Fallback to cached data if fetch fails
+        const cachedItem = backendItems.find(item => item.item_id.toString() === id);
+        if (cachedItem) {
+          setEditingItem(cachedItem);
         }
       }
     }
@@ -255,10 +282,19 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
       </div>
 
       {/* Table */}
-      <ItemsTable 
+      <ItemsTable
         items={paginatedItems}
         onQuantityChange={handleQuantityChange}
+        onEdit={handleEdit}
         onDelete={handleDelete}
+      />
+
+      {/* Edit Item Overlay */}
+      <AddItemOverlay
+        isOpen={!!editingItem}
+        onClose={() => setEditingItem(undefined)}
+        onItemCreated={onRefresh}
+        editItem={editingItem}
       />
     </div>
   );

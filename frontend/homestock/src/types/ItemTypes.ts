@@ -39,6 +39,7 @@ export interface ItemCreate {
 export interface ItemPatch {
   name?: string;
   category_name?: string;
+  unit_name?: string;
   quantity?: number;
   notes?: string;
 }

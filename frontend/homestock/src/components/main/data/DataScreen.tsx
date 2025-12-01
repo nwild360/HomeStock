@@ -9,7 +9,7 @@ import {
   deleteCategory,
   deleteUnit,
   DataError,
-} from '../../../services/dataService';
+} from '../../../services/DataService';
 import { AuthError } from '../../../services/AuthService';
 
 interface DataScreenProps {
@@ -34,6 +34,7 @@ const DataScreen: React.FC<DataScreenProps> = ({
   // Overlay state
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [overlayType, setOverlayType] = useState<'category' | 'unit' | null>(null);
+  const [editingItem, setEditingItem] = useState<Category | Unit | undefined>(undefined);
 
   // Fetch all categories and units (no backend pagination)
   useEffect(() => {
@@ -69,13 +70,15 @@ const DataScreen: React.FC<DataScreenProps> = ({
 
   // Handlers
   const handleEditCategory = (category: Category) => {
-    // TODO: Implement edit modal/overlay
-    console.log('Edit category:', category);
+    setEditingItem(category);
+    setOverlayType('category');
+    setIsOverlayOpen(true);
   };
 
   const handleEditUnit = (unit: Unit) => {
-    // TODO: Implement edit modal/overlay
-    console.log('Edit unit:', unit);
+    setEditingItem(unit);
+    setOverlayType('unit');
+    setIsOverlayOpen(true);
   };
 
   const handleDeleteCategory = async (id: number) => {
@@ -126,11 +129,13 @@ const DataScreen: React.FC<DataScreenProps> = ({
 
   // Overlay handlers
   const handleAddCategory = () => {
+    setEditingItem(undefined); // Clear edit item for create mode
     setOverlayType('category');
     setIsOverlayOpen(true);
   };
 
   const handleAddUnit = () => {
+    setEditingItem(undefined); // Clear edit item for create mode
     setOverlayType('unit');
     setIsOverlayOpen(true);
   };
@@ -138,6 +143,7 @@ const DataScreen: React.FC<DataScreenProps> = ({
   const handleCloseOverlay = () => {
     setIsOverlayOpen(false);
     setOverlayType(null);
+    setEditingItem(undefined);
   };
 
   const handleDataCreated = () => {
@@ -210,12 +216,13 @@ const DataScreen: React.FC<DataScreenProps> = ({
         />
       </div>
 
-      {/* Add Data Overlay */}
+      {/* Add/Edit Data Overlay */}
       <AddDataOverlay
         isOpen={isOverlayOpen}
         onClose={handleCloseOverlay}
         type={overlayType}
         onDataCreated={handleDataCreated}
+        editItem={editingItem}
       />
     </div>
   );

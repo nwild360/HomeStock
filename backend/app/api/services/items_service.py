@@ -270,6 +270,17 @@ def update_item(session: Session, item_id: int, patch: ItemPatch, if_unmodified_
                 )
             item.category_id = category.id
             updated = True
+        if patch.unit_name is not None:
+            unit = session.execute(
+                select(Units).where(Units.name == patch.unit_name)
+            ).scalar_one_or_none()
+            if not unit:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Unit not found"
+                )
+            item.unit_id = unit.id
+            updated = True
         if patch.notes is not None:
             item.notes = patch.notes
             updated = True

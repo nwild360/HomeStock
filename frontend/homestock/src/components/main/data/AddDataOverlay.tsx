@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
-import { createCategory, createUnit, DataError } from '../../../services/dataService';
-import { AuthError } from '../../../services/AuthService';
+import { createCategory, createUnit, updateCategory, updateUnit, DataError } from '../../../services/DataService.ts';
+import { AuthError } from '../../../services/AuthService.ts';
+import type { Category, Unit } from '../../../types/DataTypes.ts';
 
 interface AddDataOverlayProps {
   isOpen: boolean;
   onClose: () => void;
   type: 'category' | 'unit' | null;
   onDataCreated?: () => void;
+  editItem?: Category | Unit; // Item to edit (if provided, overlay is in edit mode)
 }
 
-function AddDataOverlay({ isOpen, onClose, type, onDataCreated }: AddDataOverlayProps) {
+function AddDataOverlay({ isOpen, onClose, type, onDataCreated, editItem }: AddDataOverlayProps) {
+  const isEditMode = !!editItem;
   const [formData, setFormData] = useState({
     name: '',
     description: '', // For categories
@@ -18,9 +21,19 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated }: AddDataOverlay
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset form when type changes or overlay opens
+  // Reset or populate form when type changes or overlay opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && editItem) {
+      // Populate form for editing
+      const isCategory = 'description' in editItem;
+      setFormData({
+        name: editItem.name,
+        description: isCategory ? (editItem as Category).description || '' : '',
+        abbreviation: !isCategory ? (editItem as Unit).abbreviation || '' : '',
+      });
+      setError(null);
+    } else if (isOpen) {
+      // Reset form for creating
       setFormData({
         name: '',
         description: '',
@@ -28,7 +41,7 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated }: AddDataOverlay
       });
       setError(null);
     }
-  }, [isOpen, type]);
+  }, [isOpen, type, editItem]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,16 +55,32 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated }: AddDataOverlay
     setError(null);
 
     try {
-      if (type === 'category') {
-        await createCategory({
-          name: formData.name,
-          description: formData.description || null,
-        });
+      if (isEditMode && editItem) {
+        // Update existing item
+        if (type === 'category') {
+          await updateCategory(editItem.id, {
+            name: formData.name,
+            description: formData.description || null,
+          });
+        } else {
+          await updateUnit(editItem.id, {
+            name: formData.name,
+            abbreviation: formData.abbreviation || null,
+          });
+        }
       } else {
-        await createUnit({
-          name: formData.name,
-          abbreviation: formData.abbreviation || null,
-        });
+        // Create new item
+        if (type === 'category') {
+          await createCategory({
+            name: formData.name,
+            description: formData.description || null,
+          });
+        } else {
+          await createUnit({
+            name: formData.name,
+            abbreviation: formData.abbreviation || null,
+          });
+        }
       }
 
       // Reset form
@@ -75,7 +104,7 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated }: AddDataOverlay
       } else if (err instanceof DataError) {
         setError(err.message);
       } else {
-        setError(`Failed to create ${type}. Please try again.`);
+        setError(isEditMode ? `Failed to update ${type}. Please try again.` : `Failed to create ${type}. Please try again.`);
       }
     } finally {
       setIsSubmitting(false);
@@ -85,7 +114,9 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated }: AddDataOverlay
   if (!isOpen || !type) return null;
 
   const isCategory = type === 'category';
-  const title = isCategory ? 'Add Category' : 'Add Unit';
+  const title = isEditMode
+    ? (isCategory ? 'Edit Category' : 'Edit Unit')
+    : (isCategory ? 'Add Category' : 'Add Unit');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -192,7 +223,9 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated }: AddDataOverlay
               disabled={isSubmitting}
               className="flex-1 px-4 py-2 bg-slate-950 text-white rounded-lg hover:bg-lime-400 hover:text-slate-950 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Adding...' : `Add ${isCategory ? 'Category' : 'Unit'}`}
+              {isSubmitting
+                ? (isEditMode ? 'Saving...' : 'Adding...')
+                : (isEditMode ? 'Save Changes' : `Add ${isCategory ? 'Category' : 'Unit'}`)}
             </button>
           </div>
         </form>

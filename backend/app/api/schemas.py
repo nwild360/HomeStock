@@ -35,7 +35,8 @@ class ItemCreate(BaseModel):
 
 class ItemPatch(BaseModel):
     name: Optional[str] = None
-    category_name: Optional[int] = None
+    category_name: Optional[str] = None
+    unit_name: Optional[str] = None
     quantity: Optional[Decimal] = Field(default=None, ge=0)
     notes: Optional[str] = None
     #updated_at: datetime
