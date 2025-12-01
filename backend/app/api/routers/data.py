@@ -15,7 +15,7 @@ router = APIRouter(prefix="/data", tags=["data"])
 )
 def get_categories(
     page: int = Query(1, ge=1, le=10000),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=1000),
     db: Session = Depends(get_dbsession),
     current_user: dict = Depends(require_auth)
 ):
@@ -28,7 +28,7 @@ def get_categories(
 )
 def get_units(
     page: int = Query(1, ge=1, le=10000),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=1000),
     db: Session = Depends(get_dbsession),
     current_user: dict = Depends(require_auth)
 ):
@@ -55,7 +55,7 @@ def get_unit(
     id: int,
     db: Session = Depends(get_dbsession),
     current_user: dict = Depends(require_auth)
-)
+):
     return data_service.get_unit(db, id)
 
 # POST /categories

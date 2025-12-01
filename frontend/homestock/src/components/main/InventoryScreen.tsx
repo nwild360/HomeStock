@@ -36,7 +36,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
 
       try {
         // Fetch all items (we'll filter by type client-side for now)
-        const response = await getItems(1, 100); // Fetch more items for client-side filtering
+        const response = await getItems(1, 1000); // Fetch up to 1000 items for client-side filtering
 
         // Filter items by screenType
         const filteredByType = response.items.filter(
@@ -73,10 +73,21 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
   }, [screenType, refreshKey]);
 
   // Filter items based on search
-  const filteredItems = items.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredItems = items.filter((item) => {
+    if (!searchTerm) return true;
+
+    const searchLower = searchTerm.toLowerCase().trim();
+    const nameMatch = item.name?.toLowerCase().trim().includes(searchLower) || false;
+    const categoryMatch = item.category?.toLowerCase().trim().includes(searchLower) || false;
+
+    return nameMatch || categoryMatch;
+  });
+
+  // Handle search change and reset to page 1
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
 
   // Pagination
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
@@ -189,8 +200,8 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
           type="text"
           placeholder="Search items..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-grey-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm md:text-base"
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm md:text-base"
         />
       </div>
 

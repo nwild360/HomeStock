@@ -1,12 +1,15 @@
 import FoodIcon from '../assets/FoodIcon.svg';
 import HouseholdIcon from '../assets/HouseHoldIcon.svg';
+import DataManagementIcon from '../assets/DataManagement.svg';
 
 export type InventoryType = 'food' | 'household'; // Could add equipment/tools later
+export type ScreenType = InventoryType | 'data';
 
 export interface MenuItem {
-  id: InventoryType;
+  id: ScreenType;
   label: string;
-  icon: string; 
+  icon: string;
+  separator?: boolean; // Add separator line above this item
 }
 
 export interface StatBoxConfig {
@@ -14,9 +17,16 @@ export interface StatBoxConfig {
   lastLabel: string;
 }
 
-export const MENU_ITEMS: MenuItem[] = [
+// Inventory type items only (for AddItemOverlay dropdown)
+export const INVENTORY_ITEMS: MenuItem[] = [
   { id: 'food', label: 'Food', icon: FoodIcon},
   { id: 'household', label: 'Household', icon: HouseholdIcon},
+];
+
+// All menu items including navigation items (for sidebar)
+export const MENU_ITEMS: MenuItem[] = [
+  ...INVENTORY_ITEMS,
+  { id: 'data', label: 'Data', icon: DataManagementIcon, separator: true },
 ];
 
 export const STAT_BOX_CONFIGS: Record<InventoryType, StatBoxConfig> = {

@@ -15,7 +15,7 @@ router = APIRouter(prefix="/items", tags=["items"])
 )
 def get_items(
     page: int = Query(1, ge=1, le=10000),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=1000),
     db: Session = Depends(get_dbsession),
     current_user: dict = Depends(require_auth)
 ):
