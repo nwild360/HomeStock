@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from pydantic import AnyUrl, Field, ValidationError, field_validator
+from pydantic import Field, ValidationError, field_validator
 from typing import List
 
 class Settings(BaseSettings):
@@ -42,4 +42,4 @@ def get_settings() -> Settings:
         return Settings()  # triggers validation
     except ValidationError as e:
         # Prefer loud failure on boot instead of surprising runtime errors
-        raise SystemExit(f"CONFIG ERROR: {e}")
+        raise SystemExit(f"CONFIG ERROR: {e}") from e

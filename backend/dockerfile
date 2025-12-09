@@ -17,17 +17,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Install liboqs 0.14.0 (matches liboqs-python 0.14.1 compatibility)
-# Following official liboqs-python Dockerfile approach
-RUN git clone --depth 1 --branch 0.14.0 https://github.com/open-quantum-safe/liboqs.git && \
-    cmake -S liboqs -B liboqs/build \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DBUILD_SHARED_LIBS=ON && \
-    cmake --build liboqs/build --parallel 4 && \
-    cmake --build liboqs/build --target install && \
-    ldconfig && \
-    rm -rf liboqs
-
 # Install Python deps first (cache-friendly)
 COPY requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip && pip install -r /app/requirements.txt

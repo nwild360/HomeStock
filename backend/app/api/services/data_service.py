@@ -96,7 +96,7 @@ def create_category(session: Session, category: CategoryCreate) -> CategoryOut:
         session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            detail="An error occurred while creating the category"
         )
 
 
@@ -263,7 +263,7 @@ def create_unit(session: Session, unit: UnitCreate) -> UnitOut:
         session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            detail="An error occurred while creating the unit"
         )
 
 

@@ -176,7 +176,7 @@ def create_item(session: Session, item: ItemCreate) -> ItemOut:
         session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            detail="An error occurred while creating the item"
         )
 
 # GET /items/{id} service: Get a single item by ID with its stock information
