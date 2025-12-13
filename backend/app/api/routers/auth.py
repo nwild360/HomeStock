@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response, status, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.api.schemas import Token, UserCreate, UserOut, PasswordChange, UsernameChange
 from app.api.services import auth_service
 from app.dependencies.db_session import get_dbsession
@@ -8,6 +10,7 @@ from app.dependencies.auth import require_auth
 from app.config import get_settings
 
 settings = get_settings()
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
 
@@ -18,7 +21,9 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
     summary="Register a new user",
     description="Create a new user account with username and password. Password will be hashed using Argon2id."
 )
+@limiter.limit("3/hour")
 def register(
+    request: Request,
     user_data: UserCreate,
     db: Session = Depends(get_dbsession),
     current_user: dict = Depends(require_auth)
@@ -40,7 +45,9 @@ def register(
     summary="Login to get access token",
     description="Authenticate with username and password. Sets httpOnly cookie AND returns JWT in response body (30 min expiry)."
 )
+@limiter.limit("5/15minutes")
 def login(
+    request: Request,
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_dbsession)
@@ -84,7 +91,9 @@ def login(
     summary="Get all users",
     description="Get a list of all registered users (requires authentication)."
 )
+@limiter.limit("20/minute")
 def get_all_users(
+    request: Request,
     current_user: dict = Depends(require_auth),
     db: Session = Depends(get_dbsession)
 ):
@@ -104,7 +113,9 @@ def get_all_users(
     summary="Get current user info",
     description="Get information about the currently authenticated user."
 )
+@limiter.limit("60/minute")
 def get_current_user_info(
+    request: Request,
     current_user: dict = Depends(require_auth)
 ):
     """
@@ -120,23 +131,72 @@ def get_current_user_info(
 
 @router.post(
     "/logout",
-    summary="Logout and clear session",
-    description="Clears the httpOnly cookie to log out the user."
+    summary="Logout and revoke token",
+    description="Blacklists the current JWT token and clears the httpOnly cookie. Token cannot be reused after logout."
 )
-def logout(response: Response):
+@limiter.limit("20/minute")
+def logout(
+    request: Request,
+    response: Response,
+    current_user: dict = Depends(require_auth),
+    db: Session = Depends(get_dbsession)
+):
     """
-    Logout endpoint - clears the httpOnly cookie.
+    Logout endpoint - blacklists JWT token and clears the httpOnly cookie.
 
-    This invalidates the session on the client side by removing the cookie.
-    The JWT itself remains valid until expiry, but the browser won't send it anymore.
+    This invalidates the session both client-side (cookie removal) and server-side (token blacklist).
+    The JWT is added to the blacklist table and cannot be reused, even if intercepted.
+
+    Security improvements:
+    - Prevents token reuse after logout
+    - Token blacklist entry auto-expires when JWT expires (30 min)
+    - Protects against token theft/replay attacks
     """
+    from app.dependencies.auth import blacklist_token, oauth2_scheme
+    from fastapi import Cookie
+    import jwt
+    from app.crypto.keys import get_ed25519_public_key
+
+    # Get the token from cookie or Authorization header
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+        # Fallback to Authorization header
+        auth_header = request.headers.get("authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            access_token = auth_header.split(" ")[1]
+
+    if access_token:
+        try:
+            # Decode token to get JTI and expiry
+            payload = jwt.decode(
+                access_token,
+                get_ed25519_public_key(),
+                algorithms=["EdDSA"],
+                issuer="homestock-api",
+                audience="homestock-client"
+            )
+
+            jti = payload.get("jti")
+            exp = payload.get("exp")
+
+            if jti and exp:
+                from datetime import datetime, timezone
+                expires_at = datetime.fromtimestamp(exp, tz=timezone.utc)
+
+                # Add token to blacklist
+                blacklist_token(db, jti, current_user["username"], expires_at)
+        except Exception as e:
+            # If token decoding fails, still proceed with cookie deletion
+            pass
+
+    # Clear httpOnly cookie
     response.delete_cookie(
         key="access_token",
         path="/",
-        samesite="strict"
+        samesite=settings.COOKIE_SAMESITE
     )
 
-    return {"message": "Logged out successfully"}
+    return {"message": "Logged out successfully - token has been revoked"}
 
 
 @router.patch(
@@ -144,7 +204,9 @@ def logout(response: Response):
     summary="Change user password",
     description="Change the current user's password. Requires current password verification. Invalidates all sessions."
 )
+@limiter.limit("3/hour")
 def change_password(
+    request: Request,
     password_data: PasswordChange,
     response: Response,
     current_user: dict = Depends(require_auth),
@@ -192,7 +254,9 @@ def change_password(
     summary="Change username",
     description="Change the current user's username. Must be unique."
 )
+@limiter.limit("3/hour")
 def change_username(
+    request: Request,
     username_data: UsernameChange,
     current_user: dict = Depends(require_auth),
     db: Session = Depends(get_dbsession)
@@ -228,7 +292,9 @@ def change_username(
     summary="Delete a user",
     description="Delete a user by ID (requires authentication)."
 )
+@limiter.limit("5/hour")
 def delete_user(
+    request: Request,
     user_id: int,
     current_user: dict = Depends(require_auth),
     db: Session = Depends(get_dbsession)

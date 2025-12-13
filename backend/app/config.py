@@ -3,6 +3,9 @@ from pydantic import Field, ValidationError, field_validator
 from typing import List
 
 class Settings(BaseSettings):
+    # Environment Config
+    ENVIRONMENT: str = Field(default="development")  # "development" or "production"
+
     # Database Config
     POSTGRES_USER: str = Field(default="homestock_user")
     POSTGRES_PASSWORD: str = Field(default="change_me_now")

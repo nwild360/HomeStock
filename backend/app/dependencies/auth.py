@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 import logging
+import uuid
 from fastapi import Cookie, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from passlib.context import CryptContext
-from sqlalchemy import BigInteger, Column, String, select
+from sqlalchemy import BigInteger, Column, String, select, text
 from sqlalchemy.orm import declarative_base, Session
 from app.config import get_settings
 from app.dependencies.db_session import get_dbsession
@@ -60,6 +61,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
     Ed25519 produces tiny signatures (64 bytes) that fit easily in cookies.
     Much smaller than RSA (256 bytes) or Dilithium3 (3,293 bytes).
+
+    Includes JTI (JWT ID) for token revocation support.
     """
     username = data.get("sub", "unknown")
     logger.debug(f"Creating Ed25519 JWT for user: {username}")
@@ -73,11 +76,15 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     else:
         expire = now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
+    # Generate unique JWT ID for blacklist support
+    jti = str(uuid.uuid4())
+
     to_encode.update({
         "exp": expire,
         "iat": now,
         "iss": "homestock-api",
-        "aud": "homestock-client"
+        "aud": "homestock-client",
+        "jti": jti  # JWT ID for revocation
     })
 
     # Sign with Ed25519 using PyJWT
@@ -87,7 +94,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         algorithm=ALGORITHM
     )
 
-    logger.info(f"✅ Ed25519 JWT created for '{username}' | Token size: {len(encoded_jwt)} bytes | Expires: {to_encode['exp']}")
+    logger.info(f"✅ Ed25519 JWT created for '{username}' | JTI: {jti} | Token size: {len(encoded_jwt)} bytes | Expires: {to_encode['exp']}")
 
     return encoded_jwt
 
@@ -122,6 +129,38 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[dic
 
     logger.info(f"✅ User '{username}' authenticated successfully via password")
     return user
+
+
+def is_token_blacklisted(db: Session, jti: str) -> bool:
+    """Check if a JWT token is blacklisted."""
+    result = db.execute(
+        text("SELECT 1 FROM homestock.jwt_blacklist WHERE jti = :jti"),
+        {"jti": jti}
+    ).first()
+
+    is_blacklisted = result is not None
+    if is_blacklisted:
+        logger.warning(f"❌ Token with JTI {jti} is blacklisted")
+
+    return is_blacklisted
+
+
+def blacklist_token(db: Session, jti: str, username: str, expires_at: datetime) -> None:
+    """Add a JWT token to the blacklist."""
+    try:
+        db.execute(
+            text("""
+                INSERT INTO homestock.jwt_blacklist (jti, username, expires_at)
+                VALUES (:jti, :username, :expires_at)
+            """),
+            {"jti": jti, "username": username, "expires_at": expires_at}
+        )
+        db.commit()
+        logger.info(f"✅ Token blacklisted for user '{username}' | JTI: {jti}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Failed to blacklist token: {e}")
+        raise
 
 
 async def get_current_user(
@@ -163,10 +202,20 @@ async def get_current_user(
         )
         logger.debug("✓ Ed25519 signature verified")
 
-        # Extract username
+        # Extract username and JTI
         username: str = payload.get("sub")
         if username is None:
             logger.warning("❌ Token missing 'sub' claim (username)")
+            raise credentials_exception
+
+        jti: str = payload.get("jti")
+        if jti is None:
+            logger.warning("❌ Token missing 'jti' claim (JWT ID)")
+            raise credentials_exception
+
+        # Check if token is blacklisted
+        if is_token_blacklisted(db, jti):
+            logger.warning(f"❌ Blacklisted token attempted for user '{username}'")
             raise credentials_exception
 
         logger.info(f"✅ Ed25519 signature verification SUCCESS for user: {username}")
@@ -177,6 +226,9 @@ async def get_current_user(
     except jwt.InvalidTokenError as e:
         logger.error(f"❌ JWT token validation failed: {type(e).__name__}: {e}")
         raise credentials_exception
+    except HTTPException:
+        # Re-raise HTTPException from blacklist check without logging as "unexpected"
+        raise
     except Exception as e:
         logger.error(f"❌ Unexpected error during token verification: {type(e).__name__}: {e}")
         raise credentials_exception

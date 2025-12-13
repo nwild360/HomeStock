@@ -9,3 +9,4 @@ passlib[argon2]==1.7.4
 PyJWT==2.10.1
 python-multipart==0.0.19
 cryptography==44.0.0
+slowapi==0.1.9

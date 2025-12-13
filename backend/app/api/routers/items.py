@@ -1,11 +1,14 @@
 from typing import Optional, Literal
 from fastapi import APIRouter, Query, Depends, Path, Header, status, Request
 from sqlalchemy.orm import Session
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.api.schemas import ItemsPage, ItemOut, ItemCreate, ItemPatch, StockPatch
 from app.api.services import items_service
 from app.dependencies.db_session import get_dbsession
 from app.dependencies.auth import require_auth
 
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/items", tags=["items"])
 
 # GET /items
@@ -13,7 +16,9 @@ router = APIRouter(prefix="/items", tags=["items"])
     "",
     response_model=ItemsPage,
 )
+@limiter.limit("100/minute")
 def get_items(
+    request: Request,
     page: int = Query(1, ge=1, le=10000),
     page_size: int = Query(20, ge=1, le=1000),
     db: Session = Depends(get_dbsession),
@@ -27,6 +32,7 @@ def get_items(
     response_model=ItemOut,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("30/minute")
 async def create_item(
     request: Request,
     body: ItemCreate,
@@ -43,7 +49,9 @@ async def create_item(
     "/{id}",
     response_model=ItemOut,
 )
+@limiter.limit("100/minute")
 def get_item(
+    request: Request,
     id: int,
     db: Session = Depends(get_dbsession),
     current_user: dict = Depends(require_auth)
@@ -55,7 +63,9 @@ def get_item(
     "/{id}",
     response_model=ItemOut,
 )
+@limiter.limit("30/minute")
 def update_item(
+    request: Request,
     id: int,
     body: ItemPatch,
     db: Session = Depends(get_dbsession),
@@ -69,7 +79,9 @@ def update_item(
     "/{id}/stock",
     response_model=ItemOut,
 )
+@limiter.limit("30/minute")
 def patch_stock(
+    request: Request,
     id: int,
     body: StockPatch,
     db: Session = Depends(get_dbsession),
@@ -83,7 +95,9 @@ def patch_stock(
     "/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
+@limiter.limit("20/minute")
 def delete_item(
+    request: Request,
     id: int,
     db: Session = Depends(get_dbsession),
     current_user: dict = Depends(require_auth)

@@ -55,6 +55,14 @@ CREATE TABLE IF NOT EXISTS homestock.items (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- JWT Blacklist table for token revocation
+CREATE TABLE IF NOT EXISTS homestock.jwt_blacklist (
+    jti TEXT PRIMARY KEY,  -- JWT ID (unique identifier for each token)
+    username TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ========== Indexes ==========
 -- Index for username lookups (authentication)
 CREATE INDEX IF NOT EXISTS idx_users_username ON homestock.users (username);
@@ -63,6 +71,10 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON homestock.users (username);
 CREATE INDEX IF NOT EXISTS idx_items_category_id ON homestock.items (category_id);
 CREATE INDEX IF NOT EXISTS idx_items_unit_id ON homestock.items (unit_id);
 CREATE INDEX IF NOT EXISTS idx_items_name_trgm ON homestock.items USING gin (name gin_trgm_ops);
+
+-- JWT blacklist indexes
+CREATE INDEX IF NOT EXISTS idx_jwt_blacklist_expires_at ON homestock.jwt_blacklist (expires_at);
+CREATE INDEX IF NOT EXISTS idx_jwt_blacklist_username ON homestock.jwt_blacklist (username);
 
 -- ========== Triggers ==========
 CREATE OR REPLACE FUNCTION homestock.update_updated_at_column()
@@ -86,4 +98,15 @@ CREATE TRIGGER update_items_updated_at
     BEFORE UPDATE ON homestock.items
     FOR EACH ROW
     EXECUTE FUNCTION homestock.update_updated_at_column();
+
+-- ========== JWT Blacklist Functions ==========
+-- Auto-cleanup function: Delete expired tokens from blacklist
+CREATE OR REPLACE FUNCTION homestock.cleanup_expired_jwt_tokens()
+RETURNS void AS $$
+BEGIN
+    DELETE FROM homestock.jwt_blacklist
+    WHERE expires_at < NOW();
+END;
+$$ LANGUAGE plpgsql;
+
 COMMIT;

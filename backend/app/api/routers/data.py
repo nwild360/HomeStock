@@ -1,11 +1,14 @@
 from typing import Optional, Literal
 from fastapi import APIRouter, Query, Depends, Path, Header, status, Request
 from sqlalchemy.orm import Session
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.api.schemas import CategoryCreate, UnitCreate, CategoryOut, UnitOut, CategoriesPage, UnitsPage
 from app.api.services import data_service
 from app.dependencies.db_session import get_dbsession
 from app.dependencies.auth import require_auth
 
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/data", tags=["data"])
 
 # GET /categories
@@ -13,7 +16,9 @@ router = APIRouter(prefix="/data", tags=["data"])
     "/categories",
     response_model=CategoriesPage,
 )
+@limiter.limit("60/minute")
 def get_categories(
+    request: Request,
     page: int = Query(1, ge=1, le=10000),
     page_size: int = Query(20, ge=1, le=1000),
     db: Session = Depends(get_dbsession),
@@ -26,7 +31,9 @@ def get_categories(
     "/units",
     response_model=UnitsPage,
 )
+@limiter.limit("60/minute")
 def get_units(
+    request: Request,
     page: int = Query(1, ge=1, le=10000),
     page_size: int = Query(20, ge=1, le=1000),
     db: Session = Depends(get_dbsession),
@@ -39,7 +46,9 @@ def get_units(
     "/categories/{id}",
     response_model=CategoryOut,
 )
+@limiter.limit("60/minute")
 def get_category(
+    request: Request,
     id: int,
     db: Session = Depends(get_dbsession),
     current_user: dict = Depends(require_auth)
@@ -51,7 +60,9 @@ def get_category(
     "/units/{id}",
     response_model=UnitOut,
 )
+@limiter.limit("60/minute")
 def get_unit(
+    request: Request,
     id: int,
     db: Session = Depends(get_dbsession),
     current_user: dict = Depends(require_auth)
@@ -64,6 +75,7 @@ def get_unit(
     response_model=CategoryOut,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("20/minute")
 async def create_category(
     request: Request,
     body: CategoryCreate,
@@ -80,6 +92,7 @@ async def create_category(
     response_model=UnitOut,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("20/minute")
 async def create_unit(
     request: Request,
     body: UnitCreate,
@@ -95,7 +108,9 @@ async def create_unit(
     "/categories/{id}",
     response_model=CategoryOut,
 )
+@limiter.limit("20/minute")
 def update_category(
+    request: Request,
     id: int,
     body: CategoryCreate,
     db: Session = Depends(get_dbsession),
@@ -109,7 +124,9 @@ def update_category(
     "/units/{id}",
     response_model=UnitOut,
 )
+@limiter.limit("20/minute")
 def update_unit(
+    request: Request,
     id: int,
     body: UnitCreate,
     db: Session = Depends(get_dbsession),
@@ -118,12 +135,14 @@ def update_unit(
 ):
     return data_service.update_unit(db, id, body, if_unmodified_since)
 
-# DELETE /categories 
+# DELETE /categories
 @router.delete(
     "/categories/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
+@limiter.limit("10/minute")
 def delete_category(
+    request: Request,
     id: int,
     db: Session = Depends(get_dbsession),
     current_user: dict = Depends(require_auth)
@@ -135,7 +154,9 @@ def delete_category(
     "/units/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
+@limiter.limit("10/minute")
 def delete_unit(
+    request: Request,
     id: int,
     db: Session = Depends(get_dbsession),
     current_user: dict = Depends(require_auth)

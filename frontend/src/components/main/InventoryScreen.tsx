@@ -264,10 +264,24 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
           {totalPages > 5 && <span className="px-1 md:px-2 text-xs md:text-sm">...</span>}
           {totalPages > 5 && (
             <>
-              <button className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+              <button
+                onClick={() => setCurrentPage(totalPages - 1)}
+                className={`px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg ${
+                  currentPage === totalPages - 1
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
                 {totalPages - 1}
               </button>
-              <button className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                className={`px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg ${
+                  currentPage === totalPages
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
                 {totalPages}
               </button>
             </>
