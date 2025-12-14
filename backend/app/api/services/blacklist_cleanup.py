@@ -19,22 +19,19 @@ def cleanup_expired_tokens(db: Session) -> int:
         Number of tokens removed
     """
     try:
-        result = db.execute(
-            text("SELECT homestock.cleanup_expired_jwt_tokens()")
-        )
-        db.commit()
-
-        # Count how many were deleted
+        # Count BEFORE deletion
         count_result = db.execute(
             text("SELECT COUNT(*) FROM homestock.jwt_blacklist WHERE expires_at < NOW()")
         ).scalar()
 
-        # Since we just deleted them, get the count before deletion
-        # by checking the number of rows affected
-        deleted_count = 0  # We'll log this differently
+        # Delete expired tokens
+        db.execute(
+            text("SELECT homestock.cleanup_expired_jwt_tokens()")
+        )
+        db.commit()
 
-        logger.info(f"✅ Blacklist cleanup completed - expired tokens removed")
-        return deleted_count
+        logger.info(f"✅ Blacklist cleanup completed - {count_result} expired tokens removed")
+        return count_result or 0
 
     except Exception as e:
         db.rollback()

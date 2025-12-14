@@ -115,19 +115,33 @@ def get_user_by_username(db: Session, username: str) -> Optional[dict]:
 
 
 def authenticate_user(db: Session, username: str, password: str) -> Optional[dict]:
-    """Authenticate user with username and password."""
-    logger.debug(f"Authentication attempt for user: {username}")
+    """
+    Authenticate user with username and password.
+
+    Uses constant-time comparison to prevent username enumeration via timing attacks.
+    Always performs password hashing even if user doesn't exist.
+    """
+    logger.debug("Authentication attempt")
 
     user = get_user_by_username(db, username)
-    if not user:
-        logger.warning(f"❌ Authentication failed: User '{username}' not found")
+
+    # Always verify password hash to maintain constant time (prevent timing attacks)
+    if user:
+        password_valid = verify_password(password, user["hashed_password"])
+    else:
+        # Hash a dummy password to maintain constant execution time
+        # This prevents attackers from using timing differences to enumerate valid usernames
+        # This is a real Argon2id hash of the string "dummy_password_for_timing_attack_prevention"
+        dummy_hash = "$argon2id$v=19$m=65536,t=3,p=4$YWFhYWFhYWFhYWFhYWFhYQ$VLKn8fGhvvKBSaVDkHPdqMu5LqKWTahp6YPdPX/2Z4M"
+        verify_password(password, dummy_hash)
+        password_valid = False
+
+    # Return None for any authentication failure (don't reveal which part failed)
+    if not user or not password_valid:
+        logger.warning("❌ Authentication failed")
         return None
 
-    if not verify_password(password, user["hashed_password"]):
-        logger.warning(f"❌ Authentication failed: Invalid password for user '{username}'")
-        return None
-
-    logger.info(f"✅ User '{username}' authenticated successfully via password")
+    logger.info("✅ User authenticated successfully")
     return user
 
 

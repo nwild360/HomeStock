@@ -5,13 +5,11 @@ CREATE schema IF NOT EXISTS homestock AUTHORIZATION CURRENT_USER; -- Create Sche
 
 SET search_path = homestock, pg_catalog; -- ensures unqualified names resolve to homestock only (then system catalog).
 
-CREATE EXTENSION IF NOT EXISTS pg_trgm;     -- fast fuzzy search
--- CREATE EXTENSION IF NOT EXISTS pgcrypto;    -- gen_random_uuid() if we add public IDs later
-CREATE EXTENSION IF NOT EXISTS unaccent;    -- optional: accent-insensitive search
+CREATE EXTENSION IF NOT EXISTS pg_trgm;     -- fast fuzzy search for item name search
 
 -- Domain for item types
 CREATE DOMAIN homestock.item_type AS TEXT
-  CHECK (lower(VALUE) IN ('food','household','equipment'));
+  CHECK (lower(VALUE) IN ('food','household'));
 
 -- Mild hardening: don't let "public" create objects in public schema
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
@@ -64,10 +62,9 @@ CREATE TABLE IF NOT EXISTS homestock.jwt_blacklist (
 );
 
 -- ========== Indexes ==========
--- Index for username lookups (authentication)
-CREATE INDEX IF NOT EXISTS idx_users_username ON homestock.users (username);
+-- Note: username index not needed - UNIQUE constraint on users.username automatically creates an index
 
--- Helpful index for the foreign keys
+-- Indexes for foreign keys
 CREATE INDEX IF NOT EXISTS idx_items_category_id ON homestock.items (category_id);
 CREATE INDEX IF NOT EXISTS idx_items_unit_id ON homestock.items (unit_id);
 CREATE INDEX IF NOT EXISTS idx_items_name_trgm ON homestock.items USING gin (name gin_trgm_ops);

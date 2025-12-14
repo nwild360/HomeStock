@@ -96,7 +96,7 @@ class TokenData(BaseModel):
 class UserCreate(BaseModel):
     """Request model for user registration."""
     username: str = Field(..., min_length=3, max_length=50, pattern=r'^[a-zA-Z0-9_-]+$')
-    password: str = Field(..., min_length=8, max_length=100, pattern=r'^[a-zA-Z0-9_-]+$')
+    password: str = Field(..., min_length=8, max_length=100, pattern=r'^[a-zA-Z0-9_\-!@#$%^&*()=+]+$')  # Allow safe special chars for stronger passwords
 
 class UserOut(BaseModel):
     """Response model for user data (no password)."""
@@ -111,7 +111,7 @@ class UserLogin(BaseModel):
 class PasswordChange(BaseModel):
     """Request model for changing user password."""
     current_password: str = Field(..., min_length=1, description="Current password for verification")
-    new_password: str = Field(..., min_length=8, max_length=100, pattern=r'^[a-zA-Z0-9_-]+$', description="New password (8-100 chars, alphanumeric with _-)")
+    new_password: str = Field(..., min_length=8, max_length=100, pattern=r'^[a-zA-Z0-9_\-!@#$%^&*()=+]+$', description="New password (8-100 chars, allow safe special chars)")
 
 class UsernameChange(BaseModel):
     """Request model for changing username."""

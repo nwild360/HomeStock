@@ -4,15 +4,16 @@ Default User Initialization for HomeStock
 Creates a default admin user on application startup if no users exist.
 This is for internal/self-hosted deployments where public registration is disabled.
 
-Default credentials (CHANGE THESE IMMEDIATELY AFTER FIRST LOGIN):
-- Username: admin
-- Password: homestock
+A secure random password is generated on first startup and displayed ONCE.
+Save this password immediately - it cannot be recovered!
 
-The user should change these via the /api/auth/change-username and
+The user can change credentials via /api/auth/change-username and
 /api/auth/change-password endpoints after first login.
 """
 
 import logging
+import secrets
+import string
 from sqlalchemy import select
 from app.dependencies.db_session import DBSession
 from app.dependencies.auth import User, get_password_hash
@@ -20,7 +21,26 @@ from app.dependencies.auth import User, get_password_hash
 logger = logging.getLogger(__name__)
 
 DEFAULT_USERNAME = "admin"
-DEFAULT_PASSWORD = "homestock"
+
+
+def generate_secure_password(length: int = 20) -> str:
+    """Generate a cryptographically secure random password using safe characters only."""
+    # Use safe special chars only (no quotes, angle brackets, etc.)
+    safe_special_chars = "!@#$%^&*()_-=+"
+    alphabet = string.ascii_letters + string.digits + safe_special_chars
+
+    # Ensure at least one of each type
+    password = [
+        secrets.choice(string.ascii_lowercase),
+        secrets.choice(string.ascii_uppercase),
+        secrets.choice(string.digits),
+        secrets.choice(safe_special_chars),
+    ]
+    # Fill the rest randomly
+    password += [secrets.choice(alphabet) for _ in range(length - 4)]
+    # Shuffle to avoid predictable pattern
+    secrets.SystemRandom().shuffle(password)
+    return ''.join(password)
 
 
 def initialize_default_user():
@@ -41,18 +61,20 @@ def initialize_default_user():
             logger.info("✓ Users already exist in database - skipping default user creation")
             return
 
-        # No users exist - create default user
+        # No users exist - create default user with secure random password
+        GENERATED_PASSWORD = generate_secure_password()
+
         logger.warning("=" * 70)
         logger.warning("⚠️  NO USERS FOUND - Creating default user")
         logger.warning("=" * 70)
         logger.warning(f"Default Username: {DEFAULT_USERNAME}")
-        logger.warning(f"Default Password: {DEFAULT_PASSWORD}")
+        logger.warning(f"Default Password: {GENERATED_PASSWORD}")
         logger.warning("=" * 70)
-        logger.warning("⚠️  CHANGE THESE CREDENTIALS IMMEDIATELY AFTER FIRST LOGIN!")
+        logger.warning("⚠️  SAVE THIS PASSWORD NOW - IT WILL NOT BE SHOWN AGAIN!")
         logger.warning("=" * 70)
 
-        # Hash the default password
-        hashed_password = get_password_hash(DEFAULT_PASSWORD)
+        # Hash the generated password
+        hashed_password = get_password_hash(GENERATED_PASSWORD)
 
         # Create default user
         default_user = User(

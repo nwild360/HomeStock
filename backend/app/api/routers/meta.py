@@ -1,13 +1,17 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.dependencies.db_session import get_dbsession
 from app.dependencies.auth import require_auth
 
 router = APIRouter(tags=["meta"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.get("/healthz")
-def healthz():
+@limiter.limit("120/minute")  # Allow Docker health checks + monitoring tools
+def healthz(request: Request):
     return {"ok": True}
 
 

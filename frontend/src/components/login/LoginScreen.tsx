@@ -15,12 +15,18 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
   const [loginError, setLoginError] = useState('');
   const [touched, setTouched] = useState({ username: false, password: false });
 
-  // Validation pattern: alphanumeric, underscore, and hyphen only
-  const VALID_PATTERN = /^[a-zA-Z0-9_-]+$/;
-  const ERROR_MESSAGE = 'Only letters, numbers, hyphens, and underscores allowed';
+  // Validation pattern: alphanumeric, underscore, hyphen, and safe special chars
+  const USERNAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
+  const PASSWORD_PATTERN = /^[a-zA-Z0-9_\-!@#$%^&*()=+]+$/;
+  const USERNAME_ERROR = 'Only letters, numbers, hyphens, and underscores allowed';
+  const PASSWORD_ERROR = 'Only letters, numbers, and !@#$%^&*()_-=+ allowed';
 
-  const validateField = (value: string): boolean => {
-    return value.length > 0 && VALID_PATTERN.test(value);
+  const validateUsername = (value: string): boolean => {
+    return value.length > 0 && USERNAME_PATTERN.test(value);
+  };
+
+  const validatePassword = (value: string): boolean => {
+    return value.length > 0 && PASSWORD_PATTERN.test(value);
   };
 
   const handleUsernameChange = (value: string) => {
@@ -28,8 +34,8 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
     if (touched.username) {
       if (value.length === 0) {
         setUsernameError('Username is required');
-      } else if (!VALID_PATTERN.test(value)) {
-        setUsernameError(ERROR_MESSAGE);
+      } else if (!USERNAME_PATTERN.test(value)) {
+        setUsernameError(USERNAME_ERROR);
       } else {
         setUsernameError('');
       }
@@ -41,8 +47,8 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
     if (touched.password) {
       if (value.length === 0) {
         setPasswordError('Password is required');
-      } else if (!VALID_PATTERN.test(value)) {
-        setPasswordError(ERROR_MESSAGE);
+      } else if (!PASSWORD_PATTERN.test(value)) {
+        setPasswordError(PASSWORD_ERROR);
       } else {
         setPasswordError('');
       }
@@ -53,8 +59,8 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
     setTouched(prev => ({ ...prev, username: true }));
     if (username.length === 0) {
       setUsernameError('Username is required');
-    } else if (!VALID_PATTERN.test(username)) {
-      setUsernameError(ERROR_MESSAGE);
+    } else if (!USERNAME_PATTERN.test(username)) {
+      setUsernameError(USERNAME_ERROR);
     } else {
       setUsernameError('');
     }
@@ -64,8 +70,8 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
     setTouched(prev => ({ ...prev, password: true }));
     if (password.length === 0) {
       setPasswordError('Password is required');
-    } else if (!VALID_PATTERN.test(password)) {
-      setPasswordError(ERROR_MESSAGE);
+    } else if (!PASSWORD_PATTERN.test(password)) {
+      setPasswordError(PASSWORD_ERROR);
     } else {
       setPasswordError('');
     }
@@ -78,16 +84,16 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
     setLoginError('');
 
     // Validate before submitting
-    const isUsernameValid = validateField(username);
-    const isPasswordValid = validateField(password);
+    const isUsernameValid = validateUsername(username);
+    const isPasswordValid = validatePassword(password);
 
     if (!isUsernameValid) {
-      setUsernameError(username.length === 0 ? 'Username is required' : ERROR_MESSAGE);
+      setUsernameError(username.length === 0 ? 'Username is required' : USERNAME_ERROR);
       setTouched(prev => ({ ...prev, username: true }));
     }
 
     if (!isPasswordValid) {
-      setPasswordError(password.length === 0 ? 'Password is required' : ERROR_MESSAGE);
+      setPasswordError(password.length === 0 ? 'Password is required' : PASSWORD_ERROR);
       setTouched(prev => ({ ...prev, password: true }));
     }
 
@@ -110,7 +116,7 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
     }
   };
 
-  const isFormValid = validateField(username) && validateField(password);
+  const isFormValid = validateUsername(username) && validatePassword(password);
 
   return (
     <div className="min-h-screen bg-gray-700 flex flex-col items-center justify-center p-4">

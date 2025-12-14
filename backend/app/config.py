@@ -6,6 +6,20 @@ class Settings(BaseSettings):
     # Environment Config
     ENVIRONMENT: str = Field(default="development")  # "development" or "production"
 
+    @field_validator("ENVIRONMENT")
+    @classmethod
+    def validate_environment(cls, v: str) -> str:
+        if v.lower() not in ("development", "production"):
+            raise ValueError(f"ENVIRONMENT must be 'development' or 'production', got: {v}")
+        return v.lower()
+
+    @field_validator("COOKIE_SAMESITE")
+    @classmethod
+    def validate_cookie_samesite(cls, v: str) -> str:
+        if v.lower() not in ("strict", "lax", "none"):
+            raise ValueError(f"COOKIE_SAMESITE must be 'strict', 'lax', or 'none', got: {v}")
+        return v.lower()
+
     # Database Config
     POSTGRES_USER: str = Field(default="homestock_user")
     POSTGRES_PASSWORD: str = Field(default="change_me_now")
@@ -20,8 +34,8 @@ class Settings(BaseSettings):
     COOKIE_SECURE: bool = Field(default=True)  # Set to True in production (HTTPS)
     COOKIE_SAMESITE: str = Field(default="lax")  # "strict", "lax", or "none"
 
-    # Note: JWT signing now uses dynamically generated RSA + Dilithium keys
-    # No SECRET_KEY needed - keys are ephemeral and regenerated on container restart 
+    # Note: JWT signing uses Ed25519 (EdDSA) keys for compact, secure signatures
+    # Keys are ephemeral and regenerated on container restart 
 
     @property
     def cors_origins_list(self) -> List[str]:

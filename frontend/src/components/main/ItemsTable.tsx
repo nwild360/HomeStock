@@ -59,9 +59,9 @@ function ItemsTable({ items, onQuantityChange, onEdit, onDelete }: ItemsTablePro
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900">Item Name</th>
-              <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900">Category</th>
+              <th className="hidden md:table-cell px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900">Category</th>
               <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-center text-xs md:text-base font-semibold text-gray-900">Quantity</th>
-              <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900">Unit(s)</th>
+              <th className="hidden md:table-cell px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900">Unit(s)</th>
               <th className="hidden lg:table-cell px-4 py-3 text-left text-base font-semibold text-gray-900">Notes</th>
               <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-center text-xs md:text-base font-semibold text-gray-900">Actions</th>
             </tr>
@@ -70,16 +70,16 @@ function ItemsTable({ items, onQuantityChange, onEdit, onDelete }: ItemsTablePro
             {items.map((item) => (
               <tr key={item.id} className="hover:bg-gray-50">
                 <td className="px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-900">{item.name}</td>
-                <td className="px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-600">{item.category}</td>
+                <td className="hidden md:table-cell px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-600">{item.category}</td>
                 <td className="px-2 py-2 md:px-4 md:py-3">
                   <div className="flex items-center justify-center gap-1 md:gap-2">
-                    <CircleButton 
+                    <CircleButton
                       onClick={() => onQuantityChange(item.id, item.quantity + 1)}
                       ariaLabel="Increase quantity"
                     >
                       <PlusIcon />
                     </CircleButton>
-                    
+
                     <input
                       type="text"
                       inputMode="numeric"
@@ -87,12 +87,12 @@ function ItemsTable({ items, onQuantityChange, onEdit, onDelete }: ItemsTablePro
                       value={item.quantity}
                       onChange={(e) => {
                         const value = e.target.value;
-                        
+
                         if (value === '') {
                           onQuantityChange(item.id, 0);
                           return;
                         }
-                        
+
                         const cleanValue = value.replace(/\D/g, '');
                         const numValue = Math.min(parseInt(cleanValue) || 0, 999);
                         onQuantityChange(item.id, numValue);
@@ -106,8 +106,8 @@ function ItemsTable({ items, onQuantityChange, onEdit, onDelete }: ItemsTablePro
                       className="w-10 md:w-12 text-center text-gray-700 border border-gray-300 rounded px-1 md:px-2 py-1 text-xs md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                       maxLength={3}
                     />
-                    
-                    <CircleButton 
+
+                    <CircleButton
                       onClick={() => onQuantityChange(item.id, item.quantity - 1)}
                       ariaLabel="Decrease quantity"
                     >
@@ -115,7 +115,7 @@ function ItemsTable({ items, onQuantityChange, onEdit, onDelete }: ItemsTablePro
                     </CircleButton>
                   </div>
                 </td>
-                <td className="px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-600">{item.unit}</td>
+                <td className="hidden md:table-cell px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-600">{item.unit}</td>
                 <td className="hidden lg:table-cell px-4 py-3 text-base text-gray-600 max-w-xs truncate" title={item.notes}>
                   {item.notes || '-'}
                 </td>

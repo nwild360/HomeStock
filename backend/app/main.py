@@ -44,7 +44,7 @@ openapi_url = "/openapi.json" if settings.ENVIRONMENT != "production" else None
 
 app = FastAPI(
     title="HomeStock API",
-    version="0.1.0",
+    version="1.0.0",
     docs_url=docs_url,
     redoc_url=redoc_url,
     openapi_url=openapi_url,
