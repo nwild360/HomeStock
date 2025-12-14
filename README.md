@@ -61,7 +61,7 @@ The easiest way to deploy HomeStock is using our interactive deployment script:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/HomeStock.git
+git clone https://github.com/nwild360/HomeStock.git
 cd HomeStock
 
 # Make the deployment script executable
