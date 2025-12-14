@@ -1,4 +1,4 @@
-# 🏠 HomeStock
+# HomeStock
 
 **Modern Home Inventory Management System**
 
