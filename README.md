@@ -1,4 +1,4 @@
-# 🏠 HomeStock
+# HomeStock
 
 **Modern Home Inventory Management System**
 
@@ -61,7 +61,7 @@ The easiest way to deploy HomeStock is using our interactive deployment script:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/HomeStock.git
+git clone https://github.com/nwild360/HomeStock.git
 cd HomeStock
 
 # Make the deployment script executable
@@ -128,15 +128,10 @@ POSTGRES_DB=homestock
 # CORS origins (use your actual domain/IP)
 CORS_ORIGINS=http://your-domain.com
 
-# JWT expiry (minutes)
-JWT_EXPIRY_MINUTES=30
-
 # Cookie security
 COOKIE_SECURE=true  # Set to true if using HTTPS
 COOKIE_SAMESITE=strict
 
-# Rate limiting
-RATELIMIT_ENABLED=true
 ```
 
 ### 3. Start Services
