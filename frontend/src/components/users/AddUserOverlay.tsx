@@ -62,8 +62,8 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
       return;
     }
 
-    if (!/^[a-zA-Z0-9_-]+$/.test(password)) {
-      setError('Password can only contain letters, numbers, underscores, and hyphens');
+    if (!/^[a-zA-Z0-9_\-!@#$%^&*()=+]+$/.test(password)) {
+      setError('Password can only contain letters, numbers, and special characters !@#$%^&*()_-=+');
       return;
     }
 
@@ -151,8 +151,8 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
       return;
     }
 
-    if (!/^[a-zA-Z0-9_-]+$/.test(newPassword)) {
-      setError('Password can only contain letters, numbers, underscores, and hyphens');
+    if (!/^[a-zA-Z0-9_\-!@#$%^&*()=+]+$/.test(newPassword)) {
+      setError('Password can only contain letters, numbers, and special characters !@#$%^&*()_-=+');
       return;
     }
 
@@ -256,7 +256,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
                   maxLength={100}
                   required
                 />
-                <p className="mt-1 text-xs text-gray-500">8-100 characters, alphanumeric with _ or -</p>
+                <p className="mt-1 text-xs text-gray-500">8-100 characters, allow safe special chars (!@#$%^&*()_-=+)</p>
               </div>
 
               <div>
@@ -390,7 +390,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
                           minLength={8}
                           maxLength={100}
                         />
-                        <p className="mt-1 text-xs text-gray-500">8-100 characters, alphanumeric with _ or -</p>
+                        <p className="mt-1 text-xs text-gray-500">8-100 characters, allow safe special chars (!@#$%^&*()_-=+)</p>
                       </div>
 
                       <div>
