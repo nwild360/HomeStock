@@ -221,7 +221,7 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated, editItem }: AddD
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 bg-slate-950 text-white rounded-lg hover:bg-lime-400 hover:text-slate-950 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="appearance-none flex-1 px-4 py-2 !bg-slate-950 text-white rounded-lg hover:!bg-lime-400 hover:text-slate-950 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting
                 ? (isEditMode ? 'Saving...' : 'Adding...')

@@ -18,7 +18,7 @@ const AddDataButtons: React.FC<AddDataButtonsProps> = ({
         <button
           key={button.label}
           onClick={button.onClick}
-          className="px-3 md:px-4 py-2 text-sm md:text-base bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+          className="appearance-none px-3 md:px-4 py-2 text-sm md:text-base !bg-gray-900 text-white rounded-lg hover:!bg-gray-800 transition-colors"
         >
           + Add {button.label}
         </button>

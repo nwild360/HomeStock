@@ -288,7 +288,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="appearance-none flex-1 px-4 py-2 !bg-gray-900 text-white rounded-lg hover:!bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Creating...' : 'Create User'}
@@ -348,7 +348,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
 
                       <button
                         type="submit"
-                        className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="appearance-none w-full px-4 py-2 !bg-blue-500 text-white rounded-lg hover:!bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={isSubmitting || !newUsername}
                       >
                         {isSubmitting ? 'Changing...' : 'Change Username'}
@@ -416,7 +416,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
 
                       <button
                         type="submit"
-                        className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="appearance-none w-full px-4 py-2 !bg-red-500 text-white rounded-lg hover:!bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={isSubmitting || !currentPassword || !newPassword || !confirmNewPassword}
                       >
                         {isSubmitting ? 'Changing...' : 'Change Password'}

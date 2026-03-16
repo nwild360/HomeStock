@@ -29,7 +29,7 @@ function Sidebar({ currentScreen, onAddItem, onNavigate, onLogout }: SidebarProp
       {/* Mobile Menu Button - Right Side */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 right-4 z-50 p-2 bg-gray-900 text-white rounded-lg md:hidden"
+        className="fixed top-4 right-4 z-50 p-2 !bg-gray-900 text-white rounded-lg md:hidden"
         aria-label="Toggle menu"
       >
         <div className="w-6 h-5 flex flex-col justify-between">
@@ -83,7 +83,7 @@ function Sidebar({ currentScreen, onAddItem, onNavigate, onLogout }: SidebarProp
         <div className="mt-auto p-4 border-t border-gray-600">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 transition-colors text-white font-medium"
+            className="appearance-none w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg !bg-red-600 hover:!bg-red-700 transition-colors text-white font-medium"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

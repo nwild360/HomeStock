@@ -137,9 +137,9 @@ const UserScreen: React.FC<UserScreenProps> = ({ refreshKey, onRefresh }) => {
       <div className="mb-4 md:mb-6">
         <button
           onClick={handleAddUser}
-          className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
+          className="appearance-none px-4 py-2 !bg-gray-900 text-white rounded-lg hover:!bg-gray-800 transition-colors flex items-center gap-2"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="white" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           Add User

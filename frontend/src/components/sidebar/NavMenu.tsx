@@ -23,10 +23,10 @@ function NavMenu({ currentScreen, onNavigate, onClose }: NavMenuProps) {
 
           <button
             onClick={() => handleClick(item.id)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+            className={`appearance-none w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
               currentScreen === item.id
-                ? 'bg-gray-800 text-[#A3E635]'
-                : 'hover:bg-gray-800'
+                ? '!bg-gray-800 text-[#A3E635]'
+                : '!bg-transparent hover:!bg-gray-800'
             }`}
           >
             <img

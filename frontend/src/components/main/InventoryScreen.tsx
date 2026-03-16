@@ -253,7 +253,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
                 onClick={() => setCurrentPage(pageNum)}
                 className={`px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg ${
                   currentPage === pageNum
-                    ? 'bg-gray-900 text-white'
+                    ? '!bg-gray-900 text-white'
                     : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                 }`}
               >
@@ -268,7 +268,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
                 onClick={() => setCurrentPage(totalPages - 1)}
                 className={`px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg ${
                   currentPage === totalPages - 1
-                    ? 'bg-gray-900 text-white'
+                    ? '!bg-gray-900 text-white'
                     : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                 }`}
               >
@@ -278,7 +278,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
                 onClick={() => setCurrentPage(totalPages)}
                 className={`px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg ${
                   currentPage === totalPages
-                    ? 'bg-gray-900 text-white'
+                    ? '!bg-gray-900 text-white'
                     : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                 }`}
               >
