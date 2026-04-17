@@ -18,6 +18,7 @@ HomeStock is a full-stack web application designed to help you track and manage 
 - 🔍 **Smart Search** - Quickly find items with fuzzy search
 - 📊 **Categories & Units** - Organize items with custom categories and units
 - 👥 **User Management** - Secure multi-user support with JWT authentication
+- 🔑 **SSO / OIDC** - Single Sign-On via Keycloak (or any OIDC-compliant provider)
 - 📱 **Responsive Design** - Works seamlessly on desktop, tablet, and mobile
 - 🔒 **Security First** - Argon2id password hashing, JWT tokens, rate limiting
 - 🐳 **Docker Ready** - One-command deployment with Docker Compose
@@ -171,6 +172,7 @@ docker-compose logs backend | grep "Default Password"
 | `POSTGRES_PASSWORD` | - | Database password (**required**) |
 | `POSTGRES_DB` | `homestock` | Database name |
 | `CORS_ORIGINS` | `http://localhost:5173` | Comma-separated allowed origins |
+| `FRONTEND_URL` | `http://localhost:5173` | Frontend base URL — used by OIDC callback redirect |
 | `JWT_EXPIRY_MINUTES` | `30` | JWT token expiration time |
 | `COOKIE_SECURE` | `false` | Enable secure cookies (requires HTTPS) |
 | `COOKIE_SAMESITE` | `lax` | Cookie SameSite attribute (`strict`, `lax`, or `none`) |
@@ -300,6 +302,13 @@ When running in development mode, interactive API documentation is available:
 - `POST /api/auth/logout` - Logout and revoke token
 - `GET /api/auth/me` - Get current user info
 
+#### SSO / OIDC
+- `GET /api/auth/oidc/config` - Public: check whether SSO is enabled
+- `GET /api/auth/oidc/login` - Initiate SSO login (redirects to provider)
+- `GET /api/auth/oidc/callback` - OAuth2 callback — issues local session after provider auth
+- `GET /api/auth/oidc/settings` - Read OIDC configuration (requires auth)
+- `PUT /api/auth/oidc/settings` - Update OIDC configuration (requires auth)
+
 #### Items
 - `GET /api/items` - List items (paginated)
 - `POST /api/items` - Create new item
@@ -361,6 +370,76 @@ docker-compose down
 # Stop and remove everything including volumes (⚠️ deletes data!)
 docker-compose down -v
 ```
+
+---
+
+## 🔑 SSO / OIDC
+
+HomeStock supports Single Sign-On via any OpenID Connect (OIDC) compliant provider. Keycloak is the recommended provider for self-hosted deployments. Local password accounts continue to work alongside SSO — they are not replaced.
+
+### How it works
+
+1. An admin configures the OIDC provider via **Settings → SSO / OIDC → Configure** in the UI.
+2. Once enabled, a **Sign in with SSO** button appears on the login screen.
+3. Clicking it redirects the browser to the provider's login page.
+4. After authentication, the provider redirects back to HomeStock, which issues a standard local session cookie — the OIDC token is never stored or forwarded to the frontend.
+5. On first SSO login, a local user account is automatically created (JIT provisioning) using the Keycloak `preferred_username` claim.
+
+The flow uses PKCE + `state` + `nonce` for full OAuth2 security.
+
+### Keycloak setup
+
+In your Keycloak realm, create a new client with these settings:
+
+| Setting | Value |
+|---|---|
+| Client type | OpenID Connect |
+| Client authentication | **ON** (confidential) |
+| Standard flow | ON |
+| Direct access grants | OFF |
+| Valid redirect URIs | `https://your-homestock/api/auth/oidc/callback` |
+| Web origins | `https://your-homestock-frontend` |
+
+Copy the **Client Secret** from the Credentials tab — you will need it during configuration.
+
+### Configuration
+
+Add the following to your `.env`:
+
+```bash
+FRONTEND_URL=https://your-homestock-frontend-url
+```
+
+Then log in to HomeStock, go to **Settings → SSO / OIDC → Configure**, and fill in:
+
+| Field | Example |
+|---|---|
+| Issuer URL | `https://keycloak.example.com/realms/your-realm` |
+| Client ID | `homestock` |
+| Client Secret | *(from Keycloak Credentials tab)* |
+| Redirect URI | `https://your-homestock:8000/api/auth/oidc/callback` |
+
+Toggle **Enable SSO** on and click **Save**. The SSO button appears on the login screen immediately — no restart required.
+
+> **Note:** The Issuer URL must exactly match the `iss` claim Keycloak puts in its tokens. This is the realm's **Frontend URL** as configured in Keycloak — verify it at `https://your-keycloak/realms/your-realm/.well-known/openid-configuration` under the `issuer` key.
+
+### Database migrations
+
+Starting from v1.1.0, HomeStock uses [Alembic](https://alembic.sqlalchemy.org/) for schema migrations. Migrations run automatically on container start (`alembic upgrade head`).
+
+**Upgrading an existing installation to v1.1.0:**
+
+```bash
+# Pull the new code and rebuild
+git pull
+docker-compose up -d --build
+
+# On first start, Alembic will detect no migration history
+# and apply both the baseline (001) and OIDC (002) migrations automatically.
+# No manual steps required for fresh installs.
+```
+
+If you previously ran `alembic stamp 001` manually, the 002 migration will apply on next start.
 
 ---
 
@@ -442,16 +521,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🗺️ Roadmap
-
-Future features under consideration:
-
-- [ ] Barcode scanning for quick item entry
-- [ ] Expiration date tracking and alerts
-- [ ] Shopping list generation
-- [ ] Recipe management integration
-- [ ] Statistics and usage analytics
-
----
-
-**Version:** 1.0.0 | **Status:** Production Ready ✅
+**Version:** 1.1.0 | **Status:** Production Ready ✅
