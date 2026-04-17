@@ -148,6 +148,7 @@ def validate_id_token(
             algorithms=["RS256", "RS384", "RS512", "ES256", "ES384", "ES512"],
             audience=client_id,
             issuer=issuer_url,
+            leeway=60,  # tolerate up to 60s clock skew between server and Keycloak
         )
     except jwt.ExpiredSignatureError:
         raise ValueError("id_token has expired")
