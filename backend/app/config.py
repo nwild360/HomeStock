@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # CORS settings
     CORS_ORIGINS: str = Field(default="http://localhost:5173")
 
+    # Frontend URL — used by OIDC callback to redirect back after authentication
+    FRONTEND_URL: str = Field(default="http://localhost:5173")
+
     # Cookie security settings
     COOKIE_SECURE: bool = Field(default=True)  # Set to True in production (HTTPS)
     COOKIE_SAMESITE: str = Field(default="lax")  # "strict", "lax", or "none"

@@ -116,3 +116,17 @@ class PasswordChange(BaseModel):
 class UsernameChange(BaseModel):
     """Request model for changing username."""
     new_username: str = Field(..., min_length=3, max_length=50, pattern=r'^[a-zA-Z0-9_-]+$', description="New username (3-50 chars, alphanumeric with _-)")
+
+# ---- OIDC ----
+class OidcConfig(BaseModel):
+    """Public OIDC config returned to unauthenticated clients (no secret)."""
+    enabled: bool
+    client_id: Optional[str] = None
+
+class OidcSettings(BaseModel):
+    """Full OIDC settings for admin read/write."""
+    enabled: bool
+    issuer_url: Optional[str] = None
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+    redirect_uri: Optional[str] = None

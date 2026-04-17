@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import LoginScreen from './components/login/LoginScreen.tsx'
 import SideBar from "./components/sidebar/SideBar.tsx"
@@ -6,14 +6,22 @@ import AddItemOverlay from './components/sidebar/AddItemOverlay.tsx';
 import InventoryScreen from './components/main/InventoryScreen.tsx'
 import DataScreen from './components/main/data/DataScreen.tsx'
 import UserScreen from './components/users/UserScreen.tsx'
+import SettingsScreen from './components/settings/SettingsScreen.tsx'
 import type { ScreenType, InventoryType } from './types/InventoryTypes.ts'
-import { login, logout, AuthError } from './services/AuthService.ts'
+import { login, logout, isAuthenticated, AuthError } from './services/AuthService.ts'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('food');
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0); // Trigger re-fetch when incremented
+
+  // On mount, check if the user already has a valid session (e.g. after OIDC callback redirect)
+  useEffect(() => {
+    isAuthenticated().then(authenticated => {
+      if (authenticated) setIsLoggedIn(true);
+    });
+  }, []);
 
   const handleNavigate = (screen: ScreenType) => {
     setCurrentScreen(screen);
@@ -81,6 +89,8 @@ function App() {
           refreshKey={refreshKey}
           onRefresh={() => setRefreshKey(prev => prev + 1)}
         />
+      ) : currentScreen === 'settings' ? (
+        <SettingsScreen />
       ) : (
         <InventoryScreen
           screenType={currentScreen as InventoryType}

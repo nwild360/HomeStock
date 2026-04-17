@@ -25,7 +25,9 @@ class User(Base):
 
     id = Column(BigInteger, primary_key=True)
     username = Column(String, unique=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=True)   # NULL for OIDC-only users
+    oidc_sub = Column(String, unique=True, nullable=True)
+    oidc_provider = Column(String, nullable=True)
 
 # Password hashing context using Argon2id
 pwd_context = CryptContext(
@@ -109,7 +111,9 @@ def get_user_by_username(db: Session, username: str) -> Optional[dict]:
         return {
             "id": user.id,
             "username": user.username,
-            "hashed_password": user.hashed_password
+            "hashed_password": user.hashed_password,
+            "oidc_sub": user.oidc_sub,
+            "oidc_provider": user.oidc_provider,
         }
     return None
 
@@ -126,13 +130,12 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[dic
     user = get_user_by_username(db, username)
 
     # Always verify password hash to maintain constant time (prevent timing attacks)
-    if user:
+    dummy_hash = "$argon2id$v=19$m=65536,t=3,p=4$YWFhYWFhYWFhYWFhYWFhYQ$VLKn8fGhvvKBSaVDkHPdqMu5LqKWTahp6YPdPX/2Z4M"
+    if user and user["hashed_password"] is not None:
         password_valid = verify_password(password, user["hashed_password"])
     else:
-        # Hash a dummy password to maintain constant execution time
-        # This prevents attackers from using timing differences to enumerate valid usernames
-        # This is a real Argon2id hash of the string "dummy_password_for_timing_attack_prevention"
-        dummy_hash = "$argon2id$v=19$m=65536,t=3,p=4$YWFhYWFhYWFhYWFhYWFhYQ$VLKn8fGhvvKBSaVDkHPdqMu5LqKWTahp6YPdPX/2Z4M"
+        # No password (OIDC-only user or unknown username) — hash dummy to maintain
+        # constant execution time and prevent username enumeration via timing
         verify_password(password, dummy_hash)
         password_valid = False
 

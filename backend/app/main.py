@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from app.api.routers import meta, items, auth, data
+from app.api.routers import meta, items, auth, data, oidc
 from app.config import get_settings
 from app.init.default_user import initialize_default_user
 
@@ -60,7 +60,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     max_age=600  # Cache preflight requests for 10 minutes
 )
@@ -70,3 +70,4 @@ app.include_router(meta.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(items.router, prefix="/api")
 app.include_router(data.router, prefix="/api")
+app.include_router(oidc.router, prefix="/api")

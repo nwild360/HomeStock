@@ -119,3 +119,66 @@ export async function isAuthenticated(): Promise<boolean> {
     return false;
   }
 }
+
+// ---- OIDC ----
+
+export interface OidcConfig {
+  enabled: boolean;
+  client_id?: string | null;
+}
+
+export interface OidcSettings {
+  enabled: boolean;
+  issuer_url?: string | null;
+  client_id?: string | null;
+  client_secret?: string | null;
+  redirect_uri?: string | null;
+}
+
+/**
+ * Fetch public OIDC config (no auth required).
+ * Used by the login screen to decide whether to show the SSO button.
+ */
+export async function getOidcConfig(): Promise<OidcConfig> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/oidc/config`, {
+    credentials: 'include',
+  });
+  if (!response.ok) throw new AuthError('Failed to fetch OIDC config', response.status);
+  return response.json();
+}
+
+/**
+ * Fetch full OIDC settings (requires authentication).
+ */
+export async function getOidcSettings(): Promise<OidcSettings> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/oidc/settings`, {
+    credentials: 'include',
+  });
+  if (!response.ok) throw new AuthError('Failed to fetch OIDC settings', response.status);
+  return response.json();
+}
+
+/**
+ * Save OIDC settings (requires authentication).
+ */
+export async function saveOidcSettings(settings: OidcSettings): Promise<OidcSettings> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/oidc/settings`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(settings),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new AuthError(data.detail ?? 'Failed to save OIDC settings', response.status);
+  }
+  return response.json();
+}
+
+/**
+ * Redirect the browser to the backend OIDC login endpoint.
+ * The backend generates state/nonce/PKCE and redirects to Keycloak.
+ */
+export function redirectToSsoLogin(): void {
+  window.location.href = `${API_BASE_URL}/api/auth/oidc/login`;
+}

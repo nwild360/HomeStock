@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import logo from '../../assets/HomeStock.svg';
 import LoginFields from './LoginFields';
+import { getOidcConfig, redirectToSsoLogin } from '../../services/AuthService';
 
 interface LoginScreenProps {
   onLogin: (username: string, password: string) => Promise<void>;
@@ -14,6 +15,13 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
   const [passwordError, setPasswordError] = useState('');
   const [loginError, setLoginError] = useState('');
   const [touched, setTouched] = useState({ username: false, password: false });
+  const [oidcEnabled, setOidcEnabled] = useState(false);
+
+  useEffect(() => {
+    getOidcConfig()
+      .then(cfg => setOidcEnabled(cfg.enabled))
+      .catch(() => {}); // OIDC unavailable — silently hide the button
+  }, []);
 
   // Validation pattern: alphanumeric, underscore, hyphen, and safe special chars
   const USERNAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
@@ -185,6 +193,28 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
+
+          {/* SSO Button — only shown when OIDC is enabled */}
+          {oidcEnabled && (
+            <>
+              <div className="relative flex items-center my-1">
+                <div className="flex-1 border-t border-gray-600" />
+                <span className="px-3 text-gray-500 text-sm">or</span>
+                <div className="flex-1 border-t border-gray-600" />
+              </div>
+              <button
+                type="button"
+                onClick={redirectToSsoLogin}
+                disabled={isLoading}
+                className="appearance-none w-full px-4 py-3 !bg-gray-700 hover:!bg-gray-600 border border-gray-500 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                Sign in with SSO
+              </button>
+            </>
+          )}
         </form>
       </div>
 

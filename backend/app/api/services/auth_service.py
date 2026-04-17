@@ -118,6 +118,12 @@ def change_password(db: Session, user_id: int, password_data: PasswordChange) ->
                 detail="User not found"
             )
 
+        if user.hashed_password is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password cannot be changed for SSO accounts"
+            )
+
         # Verify current password (OWASP requirement)
         if not verify_password(password_data.current_password, user.hashed_password):
             raise HTTPException(
