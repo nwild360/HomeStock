@@ -179,10 +179,10 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 overflow-auto flex items-center justify-center">
+      <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 dark:bg-gray-900 overflow-auto flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading inventory...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading inventory...</p>
         </div>
       </div>
     );
@@ -191,9 +191,9 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
   // Error state
   if (error) {
     return (
-      <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 overflow-auto flex items-center justify-center">
+      <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 dark:bg-gray-900 overflow-auto flex items-center justify-center">
         <div className="text-center">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-100 border border-red-400 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-400 px-4 py-3 rounded mb-4">
             <p className="font-bold">Error</p>
             <p>{error}</p>
           </div>
@@ -209,9 +209,9 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
   }
 
   return (
-    <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 overflow-auto">
+    <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 dark:bg-gray-900 overflow-auto">
       {/* Header */}
-      <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4 md:mb-8 capitalize">
+      <h1 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-8 capitalize">
         {screenType} Inventory
       </h1>
 
@@ -230,7 +230,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
           placeholder="Search items..."
           value={searchTerm}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm md:text-base"
+          className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm md:text-base"
         />
       </div>
 
@@ -239,7 +239,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
         <button
           onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Prev
         </button>
@@ -254,7 +254,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
                 className={`px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg ${
                   currentPage === pageNum
                     ? '!bg-gray-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
                 {pageNum}
@@ -269,7 +269,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
                 className={`px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg ${
                   currentPage === totalPages - 1
                     ? '!bg-gray-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
                 {totalPages - 1}
@@ -279,7 +279,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
                 className={`px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg ${
                   currentPage === totalPages
                     ? '!bg-gray-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
                 {totalPages}
@@ -291,7 +291,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
         <button
           onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Next
         </button>

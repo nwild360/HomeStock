@@ -57,13 +57,13 @@ function OidcSettingsOverlay({ isOpen, onClose }: OidcSettingsOverlayProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">OIDC / SSO Configuration</h2>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">OIDC / SSO Configuration</h2>
           <button
             onClick={onClose}
-            className="appearance-none text-gray-400 hover:text-gray-600 transition-colors"
+            className="appearance-none text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             aria-label="Close"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -75,13 +75,13 @@ function OidcSettingsOverlay({ isOpen, onClose }: OidcSettingsOverlayProps) {
         {/* Body */}
         <div className="overflow-y-auto p-6 flex flex-col gap-5">
           {isLoading ? (
-            <p className="text-gray-500 text-center py-8">Loading…</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">Loading…</p>
           ) : (
             <>
               {/* Enable toggle */}
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-900 font-medium">Enable SSO</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-medium">Enable SSO</p>
                   <p className="text-gray-500 text-sm mt-0.5">Show "Sign in with SSO" on the login screen</p>
                 </div>
                 <button
@@ -89,7 +89,7 @@ function OidcSettingsOverlay({ isOpen, onClose }: OidcSettingsOverlayProps) {
                   aria-checked={form.enabled}
                   onClick={() => handleChange('enabled', !form.enabled)}
                   className={`appearance-none relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    form.enabled ? '!bg-[#A3E635]' : '!bg-gray-300'
+                    form.enabled ? '!bg-[#A3E635]' : '!bg-gray-300 dark:!bg-gray-600'
                   }`}
                 >
                   <span
@@ -100,36 +100,36 @@ function OidcSettingsOverlay({ isOpen, onClose }: OidcSettingsOverlayProps) {
                 </button>
               </div>
 
-              <hr className="border-gray-200" />
+              <hr className="border-gray-200 dark:border-gray-700" />
 
               {/* Issuer URL */}
               <div className="flex flex-col gap-1">
-                <label className="block text-sm font-medium text-gray-700">Issuer URL</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Issuer URL</label>
                 <input
                   type="url"
                   value={form.issuer_url ?? ''}
                   onChange={e => handleChange('issuer_url', e.target.value)}
                   placeholder="https://keycloak.local/realms/homestock"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
                 />
                 <p className="text-gray-500 text-xs">Your Keycloak realm URL (without /.well-known/…)</p>
               </div>
 
               {/* Client ID */}
               <div className="flex flex-col gap-1">
-                <label className="block text-sm font-medium text-gray-700">Client ID</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Client ID</label>
                 <input
                   type="text"
                   value={form.client_id ?? ''}
                   onChange={e => handleChange('client_id', e.target.value)}
                   placeholder="homestock"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
                 />
               </div>
 
               {/* Client Secret */}
               <div className="flex flex-col gap-1">
-                <label className="block text-sm font-medium text-gray-700">Client Secret</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Client Secret</label>
                 <div className="relative">
                   <input
                     type={showSecret ? 'text' : 'password'}
@@ -141,7 +141,7 @@ function OidcSettingsOverlay({ isOpen, onClose }: OidcSettingsOverlayProps) {
                   <button
                     type="button"
                     onClick={() => setShowSecret(s => !s)}
-                    className="appearance-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="appearance-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     aria-label={showSecret ? 'Hide secret' : 'Show secret'}
                   >
                     {showSecret ? (
@@ -160,25 +160,25 @@ function OidcSettingsOverlay({ isOpen, onClose }: OidcSettingsOverlayProps) {
 
               {/* Redirect URI */}
               <div className="flex flex-col gap-1">
-                <label className="block text-sm font-medium text-gray-700">Redirect URI</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Redirect URI</label>
                 <input
                   type="url"
                   value={form.redirect_uri ?? ''}
                   onChange={e => handleChange('redirect_uri', e.target.value)}
                   placeholder="https://homestock.local/api/auth/oidc/callback"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
                 />
                 <p className="text-gray-500 text-xs">Must match the redirect URI registered in Keycloak</p>
               </div>
 
               {/* Feedback */}
               {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded">
                   {error}
                 </div>
               )}
               {success && (
-                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                <div className="bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-400 px-4 py-3 rounded">
                   {success}
                 </div>
               )}
@@ -187,10 +187,10 @@ function OidcSettingsOverlay({ isOpen, onClose }: OidcSettingsOverlayProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
+        <div className="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={onClose}
-            className="appearance-none px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors"
+            className="appearance-none px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium transition-colors"
           >
             Cancel
           </button>

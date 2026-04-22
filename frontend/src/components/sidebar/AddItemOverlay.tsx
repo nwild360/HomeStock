@@ -306,13 +306,13 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900">{isEditMode ? 'Edit Item' : 'Add Item'}</h2>
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">{isEditMode ? 'Edit Item' : 'Add Item'}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             aria-label="Close"
           >
             <svg
@@ -333,14 +333,14 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4">
           {/* Item Type Dropdown */}
           <div>
-            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Item Type <span className="text-red-500">*</span>
             </label>
             <select
               id="type"
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value as InventoryType })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:opacity-60"
               disabled={isEditMode}
               required
             >
@@ -355,7 +355,7 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
 
           {/* Item Name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Item Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -363,7 +363,7 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               placeholder="e.g., Milk"
               required
             />
@@ -371,7 +371,7 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
 
           {/* Category with searchable dropdown */}
           <div ref={categoryRef} className="relative">
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Category <span className="text-gray-400">(optional)</span>
             </label>
             <input
@@ -380,19 +380,19 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
               value={categorySearch}
               onChange={(e) => handleCategoryInputChange(e.target.value)}
               onFocus={() => setShowCategoryDropdown(true)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               placeholder="Search or create category..."
             />
 
             {showCategoryDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                 {filteredCategories.length > 0 ? (
                   <>
                     {filteredCategories.map((cat) => (
                       <div
                         key={cat.id}
                         onClick={() => handleCategorySelect(cat.name)}
-                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-gray-900"
+                        className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer text-gray-900 dark:text-gray-100"
                       >
                         {cat.name}
                       </div>
@@ -406,7 +406,7 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
                     + Create "{categorySearch}"
                   </div>
                 ) : (
-                  <div className="px-3 py-2 text-gray-400 text-sm">
+                  <div className="px-3 py-2 text-gray-400 dark:text-gray-500 text-sm">
                     Type to search or create...
                   </div>
                 )}
@@ -416,7 +416,7 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
 
           {/* Quantity */}
           <div>
-            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Quantity <span className="text-red-500">*</span>
             </label>
             <input
@@ -426,7 +426,7 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
               value={formatQuantity(formData.quantity)}
               onChange={(e) => handleQuantityChange(e.target.value)}
               onFocus={(e) => e.target.select()}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               maxLength={6}
               required
             />
@@ -434,7 +434,7 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
 
           {/* Unit with searchable dropdown */}
           <div ref={unitRef} className="relative">
-            <label htmlFor="unit" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="unit" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Unit <span className="text-gray-400">(optional)</span>
             </label>
             <input
@@ -443,19 +443,19 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
               value={unitSearch}
               onChange={(e) => handleUnitInputChange(e.target.value)}
               onFocus={() => setShowUnitDropdown(true)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               placeholder="Search or create unit..."
             />
 
             {showUnitDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                 {filteredUnits.length > 0 ? (
                   <>
                     {filteredUnits.map((unit) => (
                       <div
                         key={unit.id}
                         onClick={() => handleUnitSelect(unit.name)}
-                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-gray-900"
+                        className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer text-gray-900 dark:text-gray-100"
                       >
                         {unit.name}
                       </div>
@@ -469,7 +469,7 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
                     + Create "{unitSearch}"
                   </div>
                 ) : (
-                  <div className="px-3 py-2 text-gray-400 text-sm">
+                  <div className="px-3 py-2 text-gray-400 dark:text-gray-500 text-sm">
                     Type to search or create...
                   </div>
                 )}
@@ -479,7 +479,7 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
 
           {/* Notes */}
           <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Notes <span className="text-gray-400">(optional)</span>
             </label>
             <textarea
@@ -487,14 +487,14 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-gray-900"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
               placeholder="Any additional information..."
             />
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <div className="p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-400 rounded-lg">
               <p className="text-sm">{error}</p>
             </div>
           )}
@@ -505,7 +505,7 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>

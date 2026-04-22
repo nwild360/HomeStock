@@ -194,15 +194,15 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
             {isEditMode ? `Edit User: ${editUser.username}` : 'Add New User'}
           </h2>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -216,13 +216,13 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
             // CREATE MODE
             <form onSubmit={handleCreateUser} className="space-y-4">
               {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded">
                   {error}
                 </div>
               )}
 
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Username
                 </label>
                 <input
@@ -230,7 +230,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
                   id="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   placeholder="Enter username"
                   disabled={isSubmitting}
                   minLength={3}
@@ -241,7 +241,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Password
                 </label>
                 <input
@@ -249,7 +249,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   placeholder="Enter password"
                   disabled={isSubmitting}
                   minLength={8}
@@ -260,7 +260,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Confirm Password
                 </label>
                 <input
@@ -268,7 +268,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
                   id="confirmPassword"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   placeholder="Confirm password"
                   disabled={isSubmitting}
                   minLength={8}
@@ -281,7 +281,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   disabled={isSubmitting}
                 >
                   Cancel
@@ -299,7 +299,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
             // EDIT MODE
             <div className="space-y-6">
               {!isCurrentUser && (
-                <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+                <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-400 dark:border-yellow-700 text-yellow-700 dark:text-yellow-400 px-4 py-3 rounded">
                   You can only edit your own account.
                 </div>
               )}
@@ -307,29 +307,29 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
               {isCurrentUser && (
                 <>
                   {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded">
                       {error}
                     </div>
                   )}
 
                   {/* Change Username */}
-                  <div className="border-b pb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Username</h3>
+                  <div className="border-b dark:border-gray-700 pb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Change Username</h3>
                     <form onSubmit={handleChangeUsername} className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Current Username
                         </label>
                         <input
                           type="text"
                           value={editUser.username}
                           disabled
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
                         />
                       </div>
 
                       <div>
-                        <label htmlFor="newUsername" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="newUsername" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           New Username
                         </label>
                         <input
@@ -337,7 +337,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
                           id="newUsername"
                           value={newUsername}
                           onChange={(e) => setNewUsername(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                           placeholder="Enter new username"
                           disabled={isSubmitting}
                           minLength={3}
@@ -358,10 +358,10 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
 
                   {/* Change Password */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Change Password</h3>
                     <form onSubmit={handleChangePassword} className="space-y-4">
                       <div>
-                        <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Current Password
                         </label>
                         <input
@@ -369,14 +369,14 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
                           id="currentPassword"
                           value={currentPassword}
                           onChange={(e) => setCurrentPassword(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                           placeholder="Enter current password"
                           disabled={isSubmitting}
                         />
                       </div>
 
                       <div>
-                        <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           New Password
                         </label>
                         <input
@@ -384,7 +384,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
                           id="newPassword"
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                           placeholder="Enter new password"
                           disabled={isSubmitting}
                           minLength={8}
@@ -394,7 +394,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
                       </div>
 
                       <div>
-                        <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Confirm New Password
                         </label>
                         <input
@@ -402,7 +402,7 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
                           id="confirmNewPassword"
                           value={confirmNewPassword}
                           onChange={(e) => setConfirmNewPassword(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                           placeholder="Confirm new password"
                           disabled={isSubmitting}
                           minLength={8}
@@ -426,10 +426,10 @@ const AddUserOverlay: React.FC<AddUserOverlayProps> = ({ isOpen, onClose, onUser
                 </>
               )}
 
-              <div className="flex justify-end pt-4 border-t">
+              <div className="flex justify-end pt-4 border-t dark:border-gray-700">
                 <button
                   onClick={handleClose}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   Close
                 </button>
