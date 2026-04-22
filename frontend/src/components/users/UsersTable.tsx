@@ -43,21 +43,21 @@ const TrashIcon = () => (
 
 function UsersTable({ users, currentUserId, onEdit, onDelete }: UsersTableProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
             <tr>
-              <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900">ID</th>
-              <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900">Username</th>
-              <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-center text-xs md:text-base font-semibold text-gray-900">Actions</th>
+              <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900 dark:text-gray-100">ID</th>
+              <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900 dark:text-gray-100">Username</th>
+              <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-center text-xs md:text-base font-semibold text-gray-900 dark:text-gray-100">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {users.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
-                <td className="px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-900">{user.id}</td>
-                <td className="px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-900">
+              <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-900 dark:text-gray-100">{user.id}</td>
+                <td className="px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-900 dark:text-gray-100">
                   {user.username}
                   {user.id === currentUserId && (
                     <span className="ml-2 text-xs text-green-600 font-medium">(Current User)</span>

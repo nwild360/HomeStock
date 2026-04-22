@@ -128,13 +128,13 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated, editItem }: AddD
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900">{title}</h2>
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             aria-label="Close"
           >
             <svg
@@ -155,7 +155,7 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated, editItem }: AddD
         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4">
           {/* Name Field */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -163,7 +163,7 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated, editItem }: AddD
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               placeholder={isCategory ? 'e.g., Pantry' : 'e.g., Gallon'}
               required
             />
@@ -172,7 +172,7 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated, editItem }: AddD
           {/* Conditional Field - Description for Category or Abbreviation for Unit */}
           {isCategory ? (
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Description <span className="text-gray-400">(optional)</span>
               </label>
               <textarea
@@ -180,13 +180,13 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated, editItem }: AddD
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
                 placeholder="Brief description of this category..."
               />
             </div>
           ) : (
             <div>
-              <label htmlFor="abbreviation" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="abbreviation" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Abbreviation <span className="text-gray-400">(optional)</span>
               </label>
               <input
@@ -194,7 +194,7 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated, editItem }: AddD
                 type="text"
                 value={formData.abbreviation}
                 onChange={(e) => setFormData({ ...formData, abbreviation: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 placeholder="e.g., gal, lb, oz"
                 maxLength={10}
               />
@@ -203,7 +203,7 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated, editItem }: AddD
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <div className="p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-400 rounded-lg">
               <p className="text-sm">{error}</p>
             </div>
           )}
@@ -214,7 +214,7 @@ function AddDataOverlay({ isOpen, onClose, type, onDataCreated, editItem }: AddD
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>

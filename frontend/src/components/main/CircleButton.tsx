@@ -47,7 +47,7 @@ function CircleButton({ onClick, children, ariaLabel }: CircleButtonProps) {
     <button
       onClick={onClick}
       aria-label={ariaLabel}
-      className="w-6 h-6 flex items-center justify-center rounded-full border-3 border-gray-900 text-gray-900 hover:border-gray-600 hover:text-gray-600 active:border-lime-600 active:text-lime-600 transition-colors"
+      className="w-6 h-6 flex items-center justify-center rounded-full border-3 border-gray-900 dark:border-gray-300 text-gray-900 dark:text-gray-300 hover:border-gray-600 dark:hover:border-gray-400 hover:text-gray-600 dark:hover:text-gray-400 active:border-lime-600 active:text-lime-600 transition-colors"
     >
       {children}
     </button>

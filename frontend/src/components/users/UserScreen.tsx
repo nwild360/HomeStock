@@ -97,10 +97,10 @@ const UserScreen: React.FC<UserScreenProps> = ({ refreshKey, onRefresh }) => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 overflow-auto flex items-center justify-center">
+      <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 dark:bg-gray-900 overflow-auto flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading users...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading users...</p>
         </div>
       </div>
     );
@@ -109,9 +109,9 @@ const UserScreen: React.FC<UserScreenProps> = ({ refreshKey, onRefresh }) => {
   // Error state
   if (error) {
     return (
-      <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 overflow-auto flex items-center justify-center">
+      <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 dark:bg-gray-900 overflow-auto flex items-center justify-center">
         <div className="text-center">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded mb-4">
             <p className="font-bold">Error</p>
             <p>{error}</p>
           </div>
@@ -127,9 +127,9 @@ const UserScreen: React.FC<UserScreenProps> = ({ refreshKey, onRefresh }) => {
   }
 
   return (
-    <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 overflow-auto">
+    <div className="flex-1 w-full min-w-0 p-3 md:p-8 bg-gray-50 dark:bg-gray-900 overflow-auto">
       {/* Header */}
-      <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4 md:mb-8">
+      <h1 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-8">
         User Management
       </h1>
 

@@ -53,24 +53,24 @@ const TrashIcon = () => (
 
 function ItemsTable({ items, onQuantityChange, onEdit, onDelete }: ItemsTableProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
             <tr>
-              <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900">Item Name</th>
-              <th className="hidden md:table-cell px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900">Category</th>
-              <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-center text-xs md:text-base font-semibold text-gray-900">Quantity</th>
-              <th className="hidden md:table-cell px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900">Unit(s)</th>
-              <th className="hidden lg:table-cell px-4 py-3 text-left text-base font-semibold text-gray-900">Notes</th>
-              <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-center text-xs md:text-base font-semibold text-gray-900">Actions</th>
+              <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900 dark:text-gray-100">Item Name</th>
+              <th className="hidden md:table-cell px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900 dark:text-gray-100">Category</th>
+              <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-center text-xs md:text-base font-semibold text-gray-900 dark:text-gray-100">Quantity</th>
+              <th className="hidden md:table-cell px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900 dark:text-gray-100">Unit(s)</th>
+              <th className="hidden lg:table-cell px-4 py-3 text-left text-base font-semibold text-gray-900 dark:text-gray-100">Notes</th>
+              <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-center text-xs md:text-base font-semibold text-gray-900 dark:text-gray-100">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {items.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50">
-                <td className="px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-900">{item.name}</td>
-                <td className="hidden md:table-cell px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-600">{item.category}</td>
+              <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-900 dark:text-gray-100">{item.name}</td>
+                <td className="hidden md:table-cell px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-600 dark:text-gray-400">{item.category}</td>
                 <td className="px-2 py-2 md:px-4 md:py-3">
                   <div className="flex items-center justify-center gap-1 md:gap-2">
                     <CircleButton
@@ -103,7 +103,7 @@ function ItemsTable({ items, onQuantityChange, onEdit, onDelete }: ItemsTablePro
                           onQuantityChange(item.id, 0);
                         }
                       }}
-                      className="w-10 md:w-12 text-center text-gray-700 border border-gray-300 rounded px-1 md:px-2 py-1 text-xs md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className="w-10 md:w-12 text-center text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-1 md:px-2 py-1 text-xs md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                       maxLength={3}
                     />
 
@@ -115,8 +115,8 @@ function ItemsTable({ items, onQuantityChange, onEdit, onDelete }: ItemsTablePro
                     </CircleButton>
                   </div>
                 </td>
-                <td className="hidden md:table-cell px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-600">{item.unit}</td>
-                <td className="hidden lg:table-cell px-4 py-3 text-base text-gray-600 max-w-xs truncate" title={item.notes}>
+                <td className="hidden md:table-cell px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-600 dark:text-gray-400">{item.unit}</td>
+                <td className="hidden lg:table-cell px-4 py-3 text-base text-gray-600 dark:text-gray-400 max-w-xs truncate" title={item.notes}>
                   {item.notes || '-'}
                 </td>
                 <td className="px-2 py-2 md:px-4 md:py-3 text-center">
