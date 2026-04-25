@@ -1,5 +1,6 @@
 import CircleButton from './CircleButton.tsx';
 import {PlusIcon, MinusIcon} from './CircleButton.tsx';
+import type { InventoryType } from '../../types/InventoryTypes.ts';
 
 interface InventoryItem {
   id: string;
@@ -8,13 +9,72 @@ interface InventoryItem {
   quantity: number;
   unit: string;
   notes: string;
+  expiration_date: string | null;
+  date_bought: string | null;
 }
 
 interface ItemsTableProps {
   items: InventoryItem[];
+  screenType: InventoryType;
   onQuantityChange: (id: string, newQuantity: number) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+}
+
+function parseLocalDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function getDateDisplay(item: InventoryItem, screenType: InventoryType): { text: string; className: string } {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  if (screenType === 'food') {
+    if (!item.expiration_date) return { text: '-', className: 'text-gray-400 dark:text-gray-500' };
+    const d = parseLocalDate(item.expiration_date);
+    const in7Days = new Date(today);
+    in7Days.setDate(today.getDate() + 7);
+    if (d < today) return { text: fmt(d), className: 'text-red-500 font-medium' };
+    if (d <= in7Days) return { text: fmt(d), className: 'text-amber-500 font-medium' };
+    return { text: fmt(d), className: 'text-gray-600 dark:text-gray-400' };
+  } else {
+    if (!item.date_bought) return { text: '-', className: 'text-gray-400 dark:text-gray-500' };
+    const d = parseLocalDate(item.date_bought);
+    const ago1Year = new Date(today);
+    ago1Year.setFullYear(today.getFullYear() - 1);
+    const ago6Months = new Date(today);
+    ago6Months.setMonth(today.getMonth() - 6);
+    if (d <= ago1Year) return { text: fmt(d), className: 'text-red-500 font-medium' };
+    if (d <= ago6Months) return { text: fmt(d), className: 'text-amber-500 font-medium' };
+    return { text: fmt(d), className: 'text-gray-600 dark:text-gray-400' };
+  }
+}
+
+function getStatusColor(item: InventoryItem, screenType: InventoryType): string {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (screenType === 'food') {
+    if (!item.expiration_date) return 'text-gray-900 dark:text-gray-100';
+    const d = parseLocalDate(item.expiration_date);
+    const in7Days = new Date(today);
+    in7Days.setDate(today.getDate() + 7);
+    if (d < today) return 'text-red-500';
+    if (d <= in7Days) return 'text-amber-500';
+    return 'text-gray-900 dark:text-gray-100';
+  } else {
+    if (!item.date_bought) return 'text-gray-900 dark:text-gray-100';
+    const d = parseLocalDate(item.date_bought);
+    const ago1Year = new Date(today);
+    ago1Year.setFullYear(today.getFullYear() - 1);
+    const ago6Months = new Date(today);
+    ago6Months.setMonth(today.getMonth() - 6);
+    if (d <= ago1Year) return 'text-red-500';
+    if (d <= ago6Months) return 'text-amber-500';
+    return 'text-gray-900 dark:text-gray-100';
+  }
 }
 
 // Pencil Icon Component
@@ -51,7 +111,7 @@ const TrashIcon = () => (
   </svg>
 );
 
-function ItemsTable({ items, onQuantityChange, onEdit, onDelete }: ItemsTableProps) {
+function ItemsTable({ items, screenType, onQuantityChange, onEdit, onDelete }: ItemsTableProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div className="overflow-x-auto">
@@ -62,6 +122,9 @@ function ItemsTable({ items, onQuantityChange, onEdit, onDelete }: ItemsTablePro
               <th className="hidden md:table-cell px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900 dark:text-gray-100">Category</th>
               <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-center text-xs md:text-base font-semibold text-gray-900 dark:text-gray-100">Quantity</th>
               <th className="hidden md:table-cell px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900 dark:text-gray-100">Unit(s)</th>
+              <th className="hidden md:table-cell px-1.5 py-1.5 md:px-4 md:py-3 text-left text-xs md:text-base font-semibold text-gray-900 dark:text-gray-100">
+                {screenType === 'food' ? 'Expires' : 'Purchased'}
+              </th>
               <th className="hidden lg:table-cell px-4 py-3 text-left text-base font-semibold text-gray-900 dark:text-gray-100">Notes</th>
               <th className="px-1.5 py-1.5 md:px-4 md:py-3 text-center text-xs md:text-base font-semibold text-gray-900 dark:text-gray-100">Actions</th>
             </tr>
@@ -69,7 +132,7 @@ function ItemsTable({ items, onQuantityChange, onEdit, onDelete }: ItemsTablePro
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {items.map((item) => (
               <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-900 dark:text-gray-100">{item.name}</td>
+                <td className={`px-2 py-2 md:px-4 md:py-3 text-xs md:text-base font-medium ${getStatusColor(item, screenType)}`}>{item.name}</td>
                 <td className="hidden md:table-cell px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-600 dark:text-gray-400">{item.category}</td>
                 <td className="px-2 py-2 md:px-4 md:py-3">
                   <div className="flex items-center justify-center gap-1 md:gap-2">
@@ -116,6 +179,9 @@ function ItemsTable({ items, onQuantityChange, onEdit, onDelete }: ItemsTablePro
                   </div>
                 </td>
                 <td className="hidden md:table-cell px-2 py-2 md:px-4 md:py-3 text-xs md:text-base text-gray-600 dark:text-gray-400">{item.unit}</td>
+                <td className="hidden md:table-cell px-2 py-2 md:px-4 md:py-3 text-xs md:text-base">
+                  {(() => { const { text, className } = getDateDisplay(item, screenType); return <span className={className}>{text}</span>; })()}
+                </td>
                 <td className="hidden lg:table-cell px-4 py-3 text-base text-gray-600 dark:text-gray-400 max-w-xs truncate" title={item.notes}>
                   {item.notes || '-'}
                 </td>

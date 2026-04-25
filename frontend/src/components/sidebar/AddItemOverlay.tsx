@@ -22,7 +22,9 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
     category: '',
     quantity: 1,
     unit: '',
-    notes: ''
+    notes: '',
+    expiration_date: '',
+    date_bought: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +70,9 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
         category: editItem.category_name || '',
         quantity: editItem.quantity,
         unit: editItem.unit_name || '',
-        notes: editItem.notes || ''
+        notes: editItem.notes || '',
+        expiration_date: editItem.expiration_date || '',
+        date_bought: editItem.date_bought || '',
       });
       setCategorySearch(editItem.category_name || '');
       setUnitSearch(editItem.unit_name || '');
@@ -80,7 +84,9 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
         category: '',
         quantity: 1,
         unit: '',
-        notes: ''
+        notes: '',
+        expiration_date: '',
+        date_bought: '',
       });
       setCategorySearch('');
       setUnitSearch('');
@@ -206,6 +212,8 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
           unit_name: formData.unit !== (editItem.unit_name || '') ? (formData.unit || undefined) : undefined,
           quantity: formData.quantity !== editItem.quantity ? formData.quantity : undefined,
           notes: formData.notes !== (editItem.notes || '') ? (formData.notes || undefined) : undefined,
+          expiration_date: formData.expiration_date !== (editItem.expiration_date || '') ? (formData.expiration_date || null) : undefined,
+          date_bought: formData.date_bought !== (editItem.date_bought || '') ? (formData.date_bought || null) : undefined,
         };
 
         // Only send fields that changed
@@ -222,6 +230,8 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
           quantity: formData.quantity,
           unit_name: formData.unit || null,
           notes: formData.notes || null,
+          expiration_date: formData.expiration_date || null,
+          date_bought: formData.date_bought || null,
         });
       }
 
@@ -232,7 +242,9 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
         category: '',
         quantity: 1,
         unit: '',
-        notes: ''
+        notes: '',
+        expiration_date: '',
+        date_bought: '',
       });
       setCategorySearch('');
       setUnitSearch('');
@@ -491,6 +503,38 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
               placeholder="Any additional information..."
             />
           </div>
+
+          {/* Expiration Date — food only */}
+          {formData.type === 'food' && (
+            <div>
+              <label htmlFor="expiration_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Expiration Date <span className="text-gray-400">(optional)</span>
+              </label>
+              <input
+                id="expiration_date"
+                type="date"
+                value={formData.expiration_date}
+                onChange={(e) => setFormData({ ...formData, expiration_date: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              />
+            </div>
+          )}
+
+          {/* Date Bought — household only */}
+          {formData.type === 'household' && (
+            <div>
+              <label htmlFor="date_bought" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Date Bought <span className="text-gray-400">(optional)</span>
+              </label>
+              <input
+                id="date_bought"
+                type="date"
+                value={formData.date_bought}
+                onChange={(e) => setFormData({ ...formData, date_bought: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              />
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (

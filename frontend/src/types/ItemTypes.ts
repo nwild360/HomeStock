@@ -14,6 +14,8 @@ export interface Item {
   quantity: number;
   unit_name: string | null;
   notes: string | null;
+  expiration_date: string | null;
+  date_bought: string | null;
   created_at: string;
   updated_at: string;
   mealie_food_id: string | null;
@@ -34,6 +36,8 @@ export interface ItemCreate {
   unit_name?: string | null;
   notes?: string | null;
   mealie_food_id?: string | null;
+  expiration_date?: string | null;
+  date_bought?: string | null;
 }
 
 export interface ItemPatch {
@@ -42,6 +46,8 @@ export interface ItemPatch {
   unit_name?: string;
   quantity?: number;
   notes?: string;
+  expiration_date?: string | null;
+  date_bought?: string | null;
 }
 
 export interface StockPatch {

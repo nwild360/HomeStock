@@ -14,6 +14,8 @@ interface InventoryItem {
   quantity: number;
   unit: string;
   notes: string;
+  expiration_date: string | null;
+  date_bought: string | null;
 }
 
 interface InventoryScreenProps {
@@ -59,6 +61,8 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
           quantity: Number(item.quantity),
           unit: item.unit_name || '',
           notes: item.notes || '',
+          expiration_date: item.expiration_date,
+          date_bought: item.date_bought,
         }));
 
         setItems(transformedItems);
@@ -103,9 +107,42 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
 
-  // Calculate stats
-  const expiringItems = 0; // TODO: Implement when expiration dates are added
-  const expiredItems = 0; // TODO: Implement when expiration dates are added
+  // Calculate stats from backendItems
+  const parseLocalDate = (dateStr: string): Date => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let expiringItems: number;
+  let expiredItems: number;
+
+  if (screenType === 'food') {
+    const in7Days = new Date(today);
+    in7Days.setDate(today.getDate() + 7);
+    expiredItems = backendItems.filter(item =>
+      item.expiration_date && parseLocalDate(item.expiration_date) < today
+    ).length;
+    expiringItems = backendItems.filter(item => {
+      if (!item.expiration_date) return false;
+      const d = parseLocalDate(item.expiration_date);
+      return d >= today && d <= in7Days;
+    }).length;
+  } else {
+    const ago1Year = new Date(today);
+    ago1Year.setFullYear(today.getFullYear() - 1);
+    const ago6Months = new Date(today);
+    ago6Months.setMonth(today.getMonth() - 6);
+    expiredItems = backendItems.filter(item =>
+      item.date_bought && parseLocalDate(item.date_bought) <= ago1Year
+    ).length;
+    expiringItems = backendItems.filter(item => {
+      if (!item.date_bought) return false;
+      const d = parseLocalDate(item.date_bought);
+      return d > ago1Year && d <= ago6Months;
+    }).length;
+  }
 
   // Handlers
   const handleQuantityChange = async (id: string, newQuantity: number) => {
@@ -300,6 +337,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
       {/* Table */}
       <ItemsTable
         items={paginatedItems}
+        screenType={screenType}
         onQuantityChange={handleQuantityChange}
         onEdit={handleEdit}
         onDelete={handleDelete}

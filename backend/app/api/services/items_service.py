@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Numeric, String, select, func, text
+from sqlalchemy import BigInteger, Column, Date, DateTime, ForeignKey, Numeric, String, select, func, text
 from sqlalchemy.orm import declarative_base, Session
 from app.api.schemas import ItemCreate, ItemOut, ItemsPage, ItemPatch, StockPatch
 from decimal import Decimal
@@ -20,6 +20,8 @@ class Items(Base):
     unit_id = Column(BigInteger, ForeignKey("homestock.units.id"))
     mealie_food_id = Column(String)
     notes = Column(String)
+    expiration_date = Column(Date)
+    date_bought = Column(Date)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -57,6 +59,8 @@ def get_items(session: Session, page: int = 1, page_size: int = 20) -> ItemsPage
             Items.notes.label("notes"),
             Items.quantity.label("quantity"),
             Units.name.label("unit_name"),
+            Items.expiration_date.label("expiration_date"),
+            Items.date_bought.label("date_bought"),
             Items.created_at.label("created_at"),
             Items.updated_at.label("updated_at"),
         )
@@ -79,6 +83,8 @@ def get_items(session: Session, page: int = 1, page_size: int = 20) -> ItemsPage
             notes=row.notes,
             quantity=row.quantity if row.quantity is not None else Decimal("0"),
             unit_name=row.unit_name,
+            expiration_date=row.expiration_date,
+            date_bought=row.date_bought,
             created_at=row.created_at,
             updated_at=row.updated_at
         )
@@ -133,6 +139,8 @@ def create_item(session: Session, item: ItemCreate) -> ItemOut:
             unit_id=unit_id,
             notes=item.notes,
             mealie_food_id=item.mealie_food_id,
+            expiration_date=item.expiration_date,
+            date_bought=item.date_bought,
         )
         session.add(new_item)
         session.commit()
@@ -155,6 +163,8 @@ def create_item(session: Session, item: ItemCreate) -> ItemOut:
             notes=new_item.notes,
             quantity=new_item.quantity,
             unit_name=unit_name,
+            expiration_date=new_item.expiration_date,
+            date_bought=new_item.date_bought,
             created_at=new_item.created_at,
             updated_at=new_item.updated_at
         )
@@ -196,6 +206,8 @@ def get_item(session: Session, item_id: int) -> ItemOut:
             Items.notes.label("notes"),
             Items.quantity.label("quantity"),
             Units.name.label("unit_name"),
+            Items.expiration_date.label("expiration_date"),
+            Items.date_bought.label("date_bought"),
             Items.created_at.label("created_at"),
             Items.updated_at.label("updated_at")
         )
@@ -218,6 +230,8 @@ def get_item(session: Session, item_id: int) -> ItemOut:
         notes=result.notes,
         quantity=result.quantity if result.quantity is not None else Decimal("0"),
         unit_name=result.unit_name,
+        expiration_date=result.expiration_date,
+        date_bought=result.date_bought,
         created_at=result.created_at,
         updated_at=result.updated_at
     )
@@ -284,6 +298,12 @@ def update_item(session: Session, item_id: int, patch: ItemPatch, if_unmodified_
         if patch.notes is not None:
             item.notes = patch.notes
             updated = True
+        if patch.expiration_date is not None:
+            item.expiration_date = patch.expiration_date
+            updated = True
+        if patch.date_bought is not None:
+            item.date_bought = patch.date_bought
+            updated = True
         if patch.quantity is not None:
             if patch.quantity < 0:
                 raise HTTPException(
@@ -318,6 +338,8 @@ def update_item(session: Session, item_id: int, patch: ItemPatch, if_unmodified_
             notes=item.notes,
             quantity=item.quantity if item.quantity is not None else Decimal("0"),
             unit_name=unit_name,
+            expiration_date=item.expiration_date,
+            date_bought=item.date_bought,
             created_at=item.created_at,
             updated_at=item.updated_at
         )
@@ -416,6 +438,8 @@ def patch_stock(session: Session, item_id: int, stock_patch: StockPatch, if_unmo
             notes=item.notes,
             quantity=item.quantity if item.quantity is not None else Decimal("0"),
             unit_name=unit_name,
+            expiration_date=item.expiration_date,
+            date_bought=item.date_bought,
             created_at=item.created_at,
             updated_at=item.updated_at
         )

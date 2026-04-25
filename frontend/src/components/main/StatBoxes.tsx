@@ -26,7 +26,7 @@ function StatBoxes({ totalItems, expiringItems, expiredItems, screenType }: Stat
             {/* Card Icon */}
           </div>
           <div className="text-center">
-            <div className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-gray-100">{expiringItems}</div>
+            <div className={`text-2xl md:text-4xl font-bold ${expiringItems > 0 ? 'text-amber-500' : 'text-gray-900 dark:text-gray-100'}`}>{expiringItems}</div>
             <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-0.5 md:mt-1">{config.middleLabel}</div>
           </div>
         </div>
@@ -36,7 +36,7 @@ function StatBoxes({ totalItems, expiringItems, expiredItems, screenType }: Stat
             {/* Card Icon */}
           </div>
           <div className="text-center">
-            <div className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-gray-100">{expiredItems}</div>
+            <div className={`text-2xl md:text-4xl font-bold ${expiredItems > 0 ? 'text-red-500' : 'text-gray-900 dark:text-gray-100'}`}>{expiredItems}</div>
             <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-0.5 md:mt-1">{config.lastLabel}</div>
           </div>
         </div>
