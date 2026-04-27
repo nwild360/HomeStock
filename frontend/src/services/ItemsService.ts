@@ -6,7 +6,13 @@
  */
 
 import type { Item, ItemsPage, ItemCreate, ItemPatch, StockPatch } from '../types/ItemTypes';
-import { AuthError } from './AuthService'; 
+import { AuthError } from './AuthService';
+
+export interface BulkItemResult {
+  status: number;
+  item?: Item;
+  error?: string;
+}
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -176,6 +182,24 @@ export async function updateStock(
 
   const data: Item = await response.json();
   return data;
+}
+
+/**
+ * Create multiple items in one request.
+ * Returns per-item results in the same order as the input list (207 Multi-Status).
+ */
+export async function bulkCreateItems(items: ItemCreate[]): Promise<BulkItemResult[]> {
+  const response = await fetch(`${API_BASE_URL}/api/items/bulk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ items }),
+  });
+  if (!response.ok) {
+    if (response.status === 401) throw new AuthError('Not authenticated', 401);
+    throw new ItemsError(`Bulk create failed: ${response.statusText}`, response.status);
+  }
+  return response.json();
 }
 
 /**

@@ -1,9 +1,9 @@
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from fastapi import APIRouter, Query, Depends, Path, Header, status, Request
 from sqlalchemy.orm import Session
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from app.api.schemas import ItemsPage, ItemOut, ItemCreate, ItemPatch, StockPatch
+from app.api.schemas import ItemsPage, ItemOut, ItemCreate, ItemPatch, StockPatch, BulkItemCreate, BulkItemResult
 from app.api.services import items_service
 from app.dependencies.db_session import get_dbsession
 from app.dependencies.auth import require_auth
@@ -89,6 +89,36 @@ def patch_stock(
     if_unmodified_since: str | None = Header(default=None, alias="If-Unmodified-Since"),
 ):
     return items_service.patch_stock(db, id, body, if_unmodified_since)
+
+# POST /items/bulk
+@router.post(
+    "/bulk",
+    response_model=List[BulkItemResult],
+    status_code=207,
+)
+@limiter.limit("10/minute")
+def bulk_create_items(
+    request: Request,
+    body: BulkItemCreate,
+    db: Session = Depends(get_dbsession),
+    current_user: dict = Depends(require_auth),
+):
+    """Create multiple items in one request. Returns per-item results (207 Multi-Status).
+    Results are returned in the same order as the input list."""
+    from fastapi import HTTPException as FastAPIHTTPException
+    results: List[BulkItemResult] = []
+    for item in body.items:
+        try:
+            created = items_service.create_item(db, item)
+            results.append(BulkItemResult(status=201, item=created))
+        except FastAPIHTTPException as e:
+            db.rollback()
+            results.append(BulkItemResult(status=e.status_code, error=str(e.detail)))
+        except Exception as e:
+            db.rollback()
+            results.append(BulkItemResult(status=500, error="Internal error"))
+    return results
+
 
 # DELETE /items/{id}
 @router.delete(

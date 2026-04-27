@@ -134,3 +134,36 @@ class OidcSettings(BaseModel):
     client_id: Optional[str] = None
     client_secret: Optional[str] = None
     redirect_uri: Optional[str] = None
+
+# ---- Receipt Scan ----
+class ReceiptScanConfig(BaseModel):
+    """Public receipt scan config (no credentials exposed)."""
+    enabled: bool
+
+class ReceiptScanSettings(BaseModel):
+    """Full receipt scan settings for admin read/write."""
+    enabled: bool
+    provider: Optional[Literal["claude", "ollama"]] = None
+    api_key: Optional[str] = None
+    model: Optional[str] = None
+    endpoint_url: Optional[str] = None
+
+class CandidateItem(BaseModel):
+    """A single item parsed from a receipt by the AI model."""
+    item_name: str
+    item_type: Literal["food", "household"]
+    category_name: Optional[str] = None
+    quantity: Decimal = Field(default=Decimal("1"), ge=0)
+    unit_name: Optional[str] = None
+    notes: Optional[str] = None
+
+class ReceiptScanResponse(BaseModel):
+    items: List[CandidateItem]
+
+class BulkItemCreate(BaseModel):
+    items: List[ItemCreate]
+
+class BulkItemResult(BaseModel):
+    status: int
+    item: Optional[ItemOut] = None
+    error: Optional[str] = None

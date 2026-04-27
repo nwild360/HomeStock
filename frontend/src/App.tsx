@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import LoginScreen from './components/login/LoginScreen.tsx'
 import SideBar from "./components/sidebar/SideBar.tsx"
@@ -9,12 +9,19 @@ import UserScreen from './components/users/UserScreen.tsx'
 import SettingsScreen from './components/settings/SettingsScreen.tsx'
 import type { ScreenType, InventoryType } from './types/InventoryTypes.ts'
 import { login, logout, isAuthenticated, AuthError } from './services/AuthService.ts'
+import { scanReceipt, type CandidateItem } from './services/ReceiptService.ts'
+import ReceiptReviewOverlay from './components/sidebar/ReceiptReviewOverlay.tsx'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('food');
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0); // Trigger re-fetch when incremented
+  const [isScanLoading, setIsScanLoading] = useState(false);
+  const [isScanOpen, setIsScanOpen] = useState(false);
+  const [scanCandidates, setScanCandidates] = useState<CandidateItem[]>([]);
+  const [scanError, setScanError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // On mount, check if the user already has a valid session (e.g. after OIDC callback redirect)
   useEffect(() => {
@@ -25,6 +32,28 @@ function App() {
 
   const handleNavigate = (screen: ScreenType) => {
     setCurrentScreen(screen);
+  };
+
+  const handleScanReceipt = () => {
+    setScanError('');
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = ''; // reset so same file can be re-selected
+    setIsScanLoading(true);
+    setScanError('');
+    try {
+      const items = await scanReceipt(file);
+      setScanCandidates(items);
+      setIsScanOpen(true);
+    } catch (err) {
+      setScanError(err instanceof Error ? err.message : 'Receipt scan failed');
+    } finally {
+      setIsScanLoading(false);
+    }
   };
 
   const handleLogin = async (username: string, password: string) => {
@@ -68,16 +97,59 @@ function App() {
   // Show main app if logged in
   return (
     <div className='flex h-screen w-full overflow-hidden'>
+      {/* Hidden file input for receipt camera/file selection */}
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        capture="environment"
+        ref={fileInputRef}
+        onChange={handleFileSelected}
+        className="hidden"
+      />
+
+      {/* Scanning loading overlay */}
+      {isScanLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-8 flex flex-col items-center gap-4 shadow-xl">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A3E635]" />
+            <p className="text-gray-700 dark:text-gray-200 font-medium">Scanning receipt…</p>
+          </div>
+        </div>
+      )}
+
+      {/* Scan error toast */}
+      {scanError && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-3">
+          <span>{scanError}</span>
+          <button
+            onClick={() => setScanError('')}
+            className="appearance-none text-white/80 hover:text-white"
+            aria-label="Dismiss"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       <SideBar
         currentScreen={currentScreen}
         onNavigate={handleNavigate}
         onAddItem={() => setIsAddItemOpen(true)}
+        onScanReceipt={handleScanReceipt}
         onLogout={handleLogout}
         />
       <AddItemOverlay
         isOpen={isAddItemOpen}
         onClose={() => setIsAddItemOpen(false)}
         onItemCreated={() => setRefreshKey(prev => prev + 1)}
+      />
+      <ReceiptReviewOverlay
+        isOpen={isScanOpen}
+        candidates={scanCandidates}
+        onClose={() => { setIsScanOpen(false); setScanCandidates([]); }}
+        onItemsAdded={() => { setRefreshKey(prev => prev + 1); setIsScanOpen(false); setScanCandidates([]); }}
       />
       {currentScreen === 'data' ? (
         <DataScreen

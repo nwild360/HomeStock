@@ -1,18 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import logo from '../../assets/HomeStock.svg';
 import AddItemButton from './AddItemButton.tsx';
+import ScanReceiptButton from './ScanReceiptButton.tsx';
 import NavMenu from './NavMenu.tsx';
 import type { ScreenType } from '../../types/InventoryTypes.ts';
+import { getReceiptScanConfig } from '../../services/ReceiptService.ts';
 
 interface SidebarProps {
   currentScreen: ScreenType;
   onAddItem?: () => void;
+  onScanReceipt?: () => void;
   onNavigate?: (screen: ScreenType) => void;
   onLogout?: () => void;
 }
 
-function Sidebar({ currentScreen, onAddItem, onNavigate, onLogout }: SidebarProps) {
+function Sidebar({ currentScreen, onAddItem, onScanReceipt, onNavigate, onLogout }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [receiptScanEnabled, setReceiptScanEnabled] = useState(false);
+
+  useEffect(() => {
+    getReceiptScanConfig()
+      .then(cfg => setReceiptScanEnabled(cfg.enabled))
+      .catch(() => {});
+  }, []);
 
     const handleNavigate = (screen: ScreenType) => {
     onNavigate?.(screen);
@@ -64,13 +74,21 @@ function Sidebar({ currentScreen, onAddItem, onNavigate, onLogout }: SidebarProp
         </div>
 
         {/* Add Item Button */}
-        <div className="p-4">
-            <AddItemButton 
-                onClick={() => {
-                    onAddItem?.();
-                    setIsOpen(false);
-                    }}
-        />
+        <div className="p-4 flex flex-col gap-2">
+          <AddItemButton
+            onClick={() => {
+              onAddItem?.();
+              setIsOpen(false);
+            }}
+          />
+          {receiptScanEnabled && (
+            <ScanReceiptButton
+              onClick={() => {
+                onScanReceipt?.();
+                setIsOpen(false);
+              }}
+            />
+          )}
         </div>
 
         {/* Navigation Menu */}
