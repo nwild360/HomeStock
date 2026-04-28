@@ -6,10 +6,10 @@ function ScanReceiptButton({ onClick }: ScanReceiptButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="appearance-none w-full flex items-center justify-center !bg-slate-700 hover:!bg-lime-400 text-white hover:text-slate-950 font-medium py-3 px-4 rounded-lg transition-colors relative"
+      className="group appearance-none w-full flex items-center justify-center !bg-slate-700 hover:!bg-lime-400 text-white hover:text-slate-950 font-medium py-3 px-4 rounded-lg transition-colors relative"
     >
       <svg
-        className="w-5 h-5 stroke-current absolute left-4 text-lime-400"
+        className="w-5 h-5 stroke-current absolute left-4 text-lime-400 group-hover:text-slate-950 transition-colors"
         fill="none"
         viewBox="0 0 24 24"
         xmlns="http://www.w3.org/2000/svg"

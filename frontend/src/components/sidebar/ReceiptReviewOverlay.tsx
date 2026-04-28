@@ -87,9 +87,6 @@ function ReceiptReviewOverlay({ isOpen, candidates, onClose, onItemsAdded }: Rec
   };
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
-    setSubmitError('');
-
     const selectedIndices: number[] = [];
     const selectedItems: ItemCreate[] = [];
     rows.forEach((row, i) => {
@@ -107,6 +104,9 @@ function ReceiptReviewOverlay({ isOpen, candidates, onClose, onItemsAdded }: Rec
     });
 
     if (selectedItems.length === 0) return;
+
+    setIsSubmitting(true);
+    setSubmitError('');
 
     try {
       const results = await bulkCreateItems(selectedItems);

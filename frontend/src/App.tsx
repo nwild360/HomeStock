@@ -39,6 +39,37 @@ function App() {
     fileInputRef.current?.click();
   };
 
+  // iOS may deliver HEIC/HEIF even when accept="image/jpeg" — convert via canvas before upload.
+  // iOS Safari can decode HEIC natively, so drawing to a canvas and re-exporting as JPEG works.
+  const normalizeImageForUpload = (file: File): Promise<File> => {
+    if (['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      return Promise.resolve(file);
+    }
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('Canvas not available')); return; }
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(
+          blob => {
+            if (!blob) { reject(new Error('Image conversion failed')); return; }
+            resolve(new File([blob], 'receipt.jpg', { type: 'image/jpeg' }));
+          },
+          'image/jpeg',
+          0.92,
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
+      img.src = url;
+    });
+  };
+
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -46,7 +77,8 @@ function App() {
     setIsScanLoading(true);
     setScanError('');
     try {
-      const items = await scanReceipt(file);
+      const normalized = await normalizeImageForUpload(file);
+      const items = await scanReceipt(normalized);
       setScanCandidates(items);
       setIsScanOpen(true);
     } catch (err) {
@@ -100,7 +132,7 @@ function App() {
       {/* Hidden file input for receipt camera/file selection */}
       <input
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
         capture="environment"
         ref={fileInputRef}
         onChange={handleFileSelected}

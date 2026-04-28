@@ -21,14 +21,20 @@ function ReceiptScanSettingsOverlay({ isOpen, onClose }: ReceiptScanSettingsOver
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
+  // True when the server has a Claude API key stored — the GET response never returns the key itself
+  const [apiKeyConfigured, setApiKeyConfigured] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
     setError('');
     setSuccess('');
+    setApiKeyConfigured(false);
     setIsLoading(true);
     getReceiptScanSettings()
-      .then(data => setForm(data))
+      .then(data => {
+        setForm(data);
+        setApiKeyConfigured(data.provider === 'claude');
+      })
       .catch(() => setError('Failed to load receipt scan settings'))
       .finally(() => setIsLoading(false));
   }, [isOpen]);
@@ -40,8 +46,8 @@ function ReceiptScanSettingsOverlay({ isOpen, onClose }: ReceiptScanSettingsOver
   };
 
   const handleProviderChange = (provider: 'claude' | 'ollama') => {
-    // Clear provider-specific fields when switching
     setForm(prev => ({ ...prev, provider, api_key: null, endpoint_url: null }));
+    setApiKeyConfigured(false);
     setError('');
     setSuccess('');
   };
@@ -170,7 +176,11 @@ function ReceiptScanSettingsOverlay({ isOpen, onClose }: ReceiptScanSettingsOver
                       )}
                     </button>
                   </div>
-                  <p className="text-gray-500 text-xs">Your Anthropic API key from console.anthropic.com</p>
+                  {apiKeyConfigured && !form.api_key ? (
+                    <p className="text-gray-500 text-xs">API key is saved — leave blank to keep existing key</p>
+                  ) : (
+                    <p className="text-gray-500 text-xs">Your Anthropic API key from console.anthropic.com</p>
+                  )}
                 </div>
               )}
 

@@ -51,13 +51,14 @@ def get_receipt_scan_settings(db: Session) -> Optional[ReceiptScanSettings]:
 
 
 def save_receipt_scan_settings(db: Session, settings: ReceiptScanSettings) -> None:
-    """Update receipt scan settings in row id=1."""
+    """Update receipt scan settings in row id=1.
+    api_key is preserved from the existing row when settings.api_key is None."""
     db.execute(
         text("""
             UPDATE homestock.receipt_scan_settings
                SET enabled      = :enabled,
                    provider     = :provider,
-                   api_key      = :api_key,
+                   api_key      = COALESCE(:api_key, api_key),
                    model        = :model,
                    endpoint_url = :endpoint_url,
                    updated_at   = NOW()
@@ -80,15 +81,15 @@ def save_receipt_scan_settings(db: Session, settings: ReceiptScanSettings) -> No
 
 def _parse_json_response(raw: str) -> dict:
     """Strip markdown fences and parse JSON. Raises ReceiptScanError on failure."""
-    text = raw.strip()
+    cleaned = raw.strip()
     # Strip ```json ... ``` or ``` ... ``` fences
-    if text.startswith("```"):
-        text = text.split("```", 2)[1]
-        if text.startswith("json"):
-            text = text[4:]
-        text = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("```", 2)[1]
+        if cleaned.startswith("json"):
+            cleaned = cleaned[4:]
+        cleaned = cleaned.strip()
     try:
-        return json.loads(text)
+        return json.loads(cleaned)
     except json.JSONDecodeError as e:
         logger.error("Failed to parse AI response as JSON: %s\nRaw: %.500s", e, raw)
         raise ReceiptScanError("AI returned unparseable response") from e
@@ -149,6 +150,8 @@ def scan_with_ollama(image_bytes: bytes, mime_type: str, settings: ReceiptScanSe
     except ImportError as e:
         raise ReceiptScanError("httpx package is not installed") from e
 
+    if not settings.endpoint_url:
+        raise ReceiptScanError("Ollama endpoint_url is not configured")
     b64_image = base64.standard_b64encode(image_bytes).decode("utf-8")
     endpoint = settings.endpoint_url.rstrip("/")
 
