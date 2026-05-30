@@ -7,6 +7,7 @@ import InventoryScreen from './components/main/InventoryScreen.tsx'
 import DataScreen from './components/main/data/DataScreen.tsx'
 import UserScreen from './components/users/UserScreen.tsx'
 import SettingsScreen from './components/settings/SettingsScreen.tsx'
+import UtilitiesScreen from './components/utilities/UtilitiesScreen.tsx'
 import type { ScreenType, InventoryType } from './types/InventoryTypes.ts'
 import { login, logout, isAuthenticated, AuthError } from './services/AuthService.ts'
 import { scanReceipt, type CandidateItem } from './services/ReceiptService.ts'
@@ -195,6 +196,8 @@ function App() {
         />
       ) : currentScreen === 'settings' ? (
         <SettingsScreen />
+      ) : currentScreen === 'utilities' ? (
+        <UtilitiesScreen />
       ) : (
         <InventoryScreen
           screenType={currentScreen as InventoryType}

@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     cmake \
     git \
-    libssl-dev && \
+    libssl-dev \
+    postgresql-client && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Python deps first (cache-friendly)

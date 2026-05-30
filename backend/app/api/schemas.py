@@ -135,6 +135,16 @@ class OidcSettings(BaseModel):
     client_secret: Optional[str] = None
     redirect_uri: Optional[str] = None
 
+# ---- Backups ----
+class BackupItem(BaseModel):
+    name: str
+    created_at: datetime
+    size_bytes: int
+
+class BackupList(BaseModel):
+    backups: List[BackupItem]
+    total: int
+
 # ---- Receipt Scan ----
 class ReceiptScanConfig(BaseModel):
     """Public receipt scan config (no credentials exposed)."""

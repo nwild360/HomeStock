@@ -5,6 +5,7 @@
 
 ## App specific
 db_data
+backups/
 
 # Python venv folder
 venv/

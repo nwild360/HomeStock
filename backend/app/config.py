@@ -37,8 +37,22 @@ class Settings(BaseSettings):
     COOKIE_SECURE: bool = Field(default=True)  # Set to True in production (HTTPS)
     COOKIE_SAMESITE: str = Field(default="lax")  # "strict", "lax", or "none"
 
+    # Backup HMAC signing secret — used to authenticate server-created backups.
+    # Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+    BACKUP_HMAC_SECRET: str = Field(...)
+
+    @field_validator("BACKUP_HMAC_SECRET")
+    @classmethod
+    def validate_backup_hmac_secret(cls, v: str) -> str:
+        if len(v) < 32:
+            raise ValueError(
+                "BACKUP_HMAC_SECRET must be at least 32 characters. "
+                "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        return v
+
     # Note: JWT signing uses Ed25519 (EdDSA) keys for compact, secure signatures
-    # Keys are ephemeral and regenerated on container restart 
+    # Keys are ephemeral and regenerated on container restart
 
     @property
     def cors_origins_list(self) -> List[str]:
