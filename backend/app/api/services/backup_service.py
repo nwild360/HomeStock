@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
 
 BACKUP_DIR = Path(os.environ.get("BACKUP_STORAGE_PATH", "/app/backups"))
 FILENAME_RE = re.compile(r"^homestock_\d{4}-\d{2}-\d{2}_\d{6}\.zip$")
-MAX_BACKUP_BYTES = 500 * 1024 * 1024  # 500 MB
+MAX_BACKUP_BYTES = 500 * 1024 * 1024  # 500 MB compressed upload limit
+MAX_DECOMPRESSED_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB decompressed SQL limit
 _PRE_RESTORE_SCHEMA = "homestock_pre_restore"
 
 # Only one restore may run at a time. Non-blocking acquire returns a 409
@@ -234,6 +235,12 @@ def save_uploaded_backup(filename: str, data: bytes) -> BackupItem:
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail="Backup ZIP must contain homestock_dump.sql.enc",
                 )
+            member_info = zf.getinfo("homestock_dump.sql.enc")
+            if member_info.file_size > MAX_DECOMPRESSED_BYTES:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Backup SQL dump exceeds maximum allowed size (2 GB).",
+                )
             _decrypt_bytes(zf.read("homestock_dump.sql.enc"))
     except zipfile.BadZipFile:
         raise HTTPException(
@@ -297,6 +304,12 @@ def _restore_locked(filename: str) -> None:
                     raise HTTPException(
                         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                         detail="Backup ZIP does not contain homestock_dump.sql.enc",
+                    )
+                member_info = zf.getinfo("homestock_dump.sql.enc")
+                if member_info.file_size > MAX_DECOMPRESSED_BYTES:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail="Backup SQL dump exceeds maximum allowed size (2 GB).",
                     )
                 encrypted_sql = zf.read("homestock_dump.sql.enc")
                 stored_checksum = (
