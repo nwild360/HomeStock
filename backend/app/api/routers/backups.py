@@ -11,7 +11,7 @@ Endpoints:
 """
 import logging
 from fastapi import APIRouter, Depends, Request, UploadFile, File, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
@@ -61,8 +61,12 @@ async def upload_backup(
 @router.get("/{filename}/download")
 @limiter.limit("10/minute")
 def download_backup(filename: str, request: Request, _user=Depends(require_auth)):
-    path = backup_service.get_backup_path(filename)
-    return FileResponse(path=str(path), media_type="application/zip", filename=filename)
+    plaintext_zip = backup_service.decrypt_backup_for_download(filename)
+    return Response(
+        content=plaintext_zip,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.post("/{filename}/restore", status_code=status.HTTP_200_OK)

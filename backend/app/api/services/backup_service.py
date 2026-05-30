@@ -11,6 +11,8 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
+from cryptography.exceptions import InvalidTag
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from fastapi import HTTPException, status
 
 from app.api.schemas import BackupItem
@@ -26,6 +28,34 @@ _PRE_RESTORE_SCHEMA = "homestock_pre_restore"
 # Only one restore may run at a time. Non-blocking acquire returns a 409
 # immediately rather than queuing a second restore behind a long-running one.
 _restore_lock = threading.Lock()
+
+_NONCE_SIZE = 12  # 96-bit nonce for AES-256-GCM
+
+
+def _get_aes_key() -> bytes:
+    return bytes.fromhex(get_settings().BACKUP_ENCRYPTION_KEY)
+
+
+def _encrypt_bytes(data: bytes) -> bytes:
+    nonce = os.urandom(_NONCE_SIZE)
+    ciphertext = AESGCM(_get_aes_key()).encrypt(nonce, data, None)
+    return nonce + ciphertext
+
+
+def _decrypt_bytes(data: bytes) -> bytes:
+    try:
+        nonce = data[:_NONCE_SIZE]
+        ciphertext = data[_NONCE_SIZE:]
+        return AESGCM(_get_aes_key()).decrypt(nonce, ciphertext, None)
+    except InvalidTag:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                "Backup decryption failed. The file may be corrupted, "
+                "was created before encryption was enabled, "
+                "or was encrypted with a different key."
+            ),
+        )
 
 
 def _ensure_backup_dir() -> None:
@@ -169,10 +199,12 @@ def create_backup() -> BackupItem:
         checksum = _sha256_of_file(tmp_path)
         signature = _hmac_of_file(tmp_path)
 
-        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        zip_buf = io.BytesIO()
+        with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
             zf.write(tmp_path, arcname="homestock_dump.sql")
             zf.writestr("checksum.sha256", checksum)
             zf.writestr("signature.hmac", signature)
+        zip_path.write_bytes(_encrypt_bytes(zip_buf.getvalue()))
 
         stat = zip_path.stat()
         return BackupItem(
@@ -221,6 +253,12 @@ def delete_backup(filename: str) -> None:
     path.unlink()
 
 
+def decrypt_backup_for_download(filename: str) -> bytes:
+    """Decrypt a backup and return the plaintext ZIP bytes for download."""
+    path = get_backup_path(filename)
+    return _decrypt_bytes(path.read_bytes())
+
+
 def save_uploaded_backup(filename: str, data: bytes) -> BackupItem:
     if not FILENAME_RE.match(filename):
         raise HTTPException(
@@ -248,7 +286,7 @@ def save_uploaded_backup(filename: str, data: bytes) -> BackupItem:
             detail=f"A backup named {filename} already exists.",
         )
 
-    dest.write_bytes(data)
+    dest.write_bytes(_encrypt_bytes(data))
     stat = dest.stat()
     return BackupItem(
         name=filename,
@@ -288,8 +326,9 @@ def _restore_locked(filename: str) -> None:
     env = _db_env()
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        # ── Step 1: Extract and verify before touching anything ──────────────
-        with zipfile.ZipFile(path, "r") as zf:
+        # ── Step 1: Decrypt, then extract and verify — schema untouched ─────
+        zip_bytes = _decrypt_bytes(path.read_bytes())
+        with zipfile.ZipFile(io.BytesIO(zip_bytes), "r") as zf:
             namelist = zf.namelist()
             if "homestock_dump.sql" not in namelist:
                 raise HTTPException(

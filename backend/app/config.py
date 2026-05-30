@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     COOKIE_SECURE: bool = Field(default=True)  # Set to True in production (HTTPS)
     COOKIE_SAMESITE: str = Field(default="lax")  # "strict", "lax", or "none"
 
-    # Backup HMAC signing secret — used to authenticate server-created backups.
+    # Backup HMAC signing secret — authenticates server-created backups on restore.
     # Generate with: python -c "import secrets; print(secrets.token_hex(32))"
     BACKUP_HMAC_SECRET: str = Field(...)
 
@@ -47,7 +47,29 @@ class Settings(BaseSettings):
         if len(v) < 32:
             raise ValueError(
                 "BACKUP_HMAC_SECRET must be at least 32 characters. "
-                "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        return v
+
+    # Backup encryption key — AES-256-GCM key for encrypting backup files at rest.
+    # Must be exactly 64 hex characters (32 bytes). Keep separate from BACKUP_HMAC_SECRET.
+    # Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+    BACKUP_ENCRYPTION_KEY: str = Field(...)
+
+    @field_validator("BACKUP_ENCRYPTION_KEY")
+    @classmethod
+    def validate_backup_encryption_key(cls, v: str) -> str:
+        try:
+            key_bytes = bytes.fromhex(v)
+        except ValueError:
+            raise ValueError(
+                "BACKUP_ENCRYPTION_KEY must be a hex string. "
+                "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        if len(key_bytes) != 32:
+            raise ValueError(
+                "BACKUP_ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes). "
+                "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
             )
         return v
 

@@ -37,6 +37,7 @@ services:
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       BACKUP_HMAC_SECRET: ${BACKUP_HMAC_SECRET}
+      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY}
     volumes:
       - ./backend:/app   # bind-mount code for --reload
       - ./backups:/app/backups
