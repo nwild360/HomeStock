@@ -6,6 +6,7 @@ import re
 import logging
 import tempfile
 import subprocess
+import threading
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,6 +22,10 @@ BACKUP_DIR = Path(os.environ.get("BACKUP_STORAGE_PATH", "/app/backups"))
 FILENAME_RE = re.compile(r"^homestock_\d{4}-\d{2}-\d{2}_\d{6}\.zip$")
 MAX_BACKUP_BYTES = 500 * 1024 * 1024  # 500 MB
 _PRE_RESTORE_SCHEMA = "homestock_pre_restore"
+
+# Only one restore may run at a time. Non-blocking acquire returns a 409
+# immediately rather than queuing a second restore behind a long-running one.
+_restore_lock = threading.Lock()
 
 
 def _ensure_backup_dir() -> None:
@@ -266,6 +271,19 @@ def restore_backup(filename: str) -> None:
       5b. Failure → DROP homestock CASCADE +
                     RENAME homestock_pre_restore → homestock  (full rollback).
     """
+    if not _restore_lock.acquire(blocking=False):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A restore is already in progress. Please wait for it to complete.",
+        )
+    try:
+        _restore_locked(filename)
+    finally:
+        _restore_lock.release()
+
+
+def _restore_locked(filename: str) -> None:
+    """Inner restore logic — must only be called while _restore_lock is held."""
     path = get_backup_path(filename)
     env = _db_env()
 
