@@ -112,28 +112,26 @@ def _hmac_of_file(path: str) -> str:
     return h.hexdigest()
 
 
-def _verify_checksum(sql_path: str, checksum_path: str | None) -> None:
-    """Verify the SQL dump matches the stored checksum. No-op if no checksum file (legacy backup)."""
-    if checksum_path is None:
+def _verify_checksum(sql_path: str, stored: str | None) -> None:
+    """Verify the plaintext SQL dump matches the stored checksum. No-op if absent."""
+    if stored is None:
         return
-    with open(checksum_path, "r") as f:
-        expected = f.read().strip()
     actual = _sha256_of_file(sql_path)
-    if actual != expected:
+    if actual != stored:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Backup integrity check failed: checksum mismatch. The file may be corrupted.",
         )
 
 
-def _verify_signature(sql_path: str, signature_path: str | None) -> None:
+def _verify_signature(sql_path: str, stored: str | None) -> None:
     """
-    Verify the HMAC-SHA256 signature of the SQL dump.
+    Verify the HMAC-SHA256 signature of the plaintext SQL dump.
 
-    Both a missing signature file and a mismatched signature are rejected — only
-    backups created by this server (which knows BACKUP_HMAC_SECRET) can be restored.
+    Both a missing signature and a mismatched one are rejected — only backups
+    created by this server (which knows BACKUP_HMAC_SECRET) can be restored.
     """
-    if signature_path is None:
+    if stored is None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=(
@@ -141,8 +139,6 @@ def _verify_signature(sql_path: str, signature_path: str | None) -> None:
                 "can be restored. External or manually modified backups are not accepted."
             ),
         )
-    with open(signature_path, "r") as f:
-        stored = f.read().strip()
     actual = _hmac_of_file(sql_path)
     if not hmac.compare_digest(actual, stored):
         raise HTTPException(
@@ -199,12 +195,13 @@ def create_backup() -> BackupItem:
         checksum = _sha256_of_file(tmp_path)
         signature = _hmac_of_file(tmp_path)
 
-        zip_buf = io.BytesIO()
-        with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
-            zf.write(tmp_path, arcname="homestock_dump.sql")
+        with open(tmp_path, "rb") as f:
+            encrypted_sql = _encrypt_bytes(f.read())
+
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("homestock_dump.sql.enc", encrypted_sql)
             zf.writestr("checksum.sha256", checksum)
             zf.writestr("signature.hmac", signature)
-        zip_path.write_bytes(_encrypt_bytes(zip_buf.getvalue()))
 
         stat = zip_path.stat()
         return BackupItem(
@@ -260,21 +257,21 @@ def save_uploaded_backup(filename: str, data: bytes) -> BackupItem:
             detail="Filename must match: homestock_YYYY-MM-DD_HHMMSS.zip",
         )
 
-    # Decrypt first to validate structure — uploaded backups must be encrypted
-    # files produced by this server (or another instance sharing the same key).
-    # We save the encrypted bytes as-is; no re-encryption.
-    decrypted = _decrypt_bytes(data)
+    # Validate structure and that the encrypted SQL is decryptable with our key.
+    # Uploaded backups must be ZIPs produced by this server (or another instance
+    # sharing the same BACKUP_ENCRYPTION_KEY). Saved as-is; no re-encryption.
     try:
-        with zipfile.ZipFile(io.BytesIO(decrypted), "r") as zf:
-            if "homestock_dump.sql" not in zf.namelist():
+        with zipfile.ZipFile(io.BytesIO(data), "r") as zf:
+            if "homestock_dump.sql.enc" not in zf.namelist():
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="Backup ZIP must contain homestock_dump.sql",
+                    detail="Backup ZIP must contain homestock_dump.sql.enc",
                 )
+            _decrypt_bytes(zf.read("homestock_dump.sql.enc"))
     except zipfile.BadZipFile:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Decrypted content is not a valid ZIP archive.",
+            detail="Uploaded file is not a valid ZIP archive.",
         )
 
     _ensure_backup_dir()
@@ -325,28 +322,38 @@ def _restore_locked(filename: str) -> None:
     env = _db_env()
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        # ── Step 1: Decrypt, then extract and verify — schema untouched ─────
-        zip_bytes = _decrypt_bytes(path.read_bytes())
-        with zipfile.ZipFile(io.BytesIO(zip_bytes), "r") as zf:
-            namelist = zf.namelist()
-            if "homestock_dump.sql" not in namelist:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="Backup ZIP does not contain homestock_dump.sql",
+        # ── Step 1: Extract, decrypt, verify — schema untouched throughout ──
+        try:
+            with zipfile.ZipFile(path, "r") as zf:
+                namelist = zf.namelist()
+                if "homestock_dump.sql.enc" not in namelist:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail="Backup ZIP does not contain homestock_dump.sql.enc",
+                    )
+                encrypted_sql = zf.read("homestock_dump.sql.enc")
+                stored_checksum = (
+                    zf.read("checksum.sha256").decode().strip()
+                    if "checksum.sha256" in namelist else None
                 )
-            zf.extract("homestock_dump.sql", tmpdir)
-            checksum_path = None
-            if "checksum.sha256" in namelist:
-                zf.extract("checksum.sha256", tmpdir)
-                checksum_path = os.path.join(tmpdir, "checksum.sha256")
-            signature_path = None
-            if "signature.hmac" in namelist:
-                zf.extract("signature.hmac", tmpdir)
-                signature_path = os.path.join(tmpdir, "signature.hmac")
+                stored_signature = (
+                    zf.read("signature.hmac").decode().strip()
+                    if "signature.hmac" in namelist else None
+                )
+        except zipfile.BadZipFile:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Backup file is not a valid ZIP archive.",
+            )
+
+        plaintext_sql = _decrypt_bytes(encrypted_sql)
 
         sql_path = os.path.join(tmpdir, "homestock_dump.sql")
-        _verify_checksum(sql_path, checksum_path)
-        _verify_signature(sql_path, signature_path)
+        with open(sql_path, "wb") as f:
+            f.write(plaintext_sql)
+
+        _verify_checksum(sql_path, stored_checksum)
+        _verify_signature(sql_path, stored_signature)
 
         # ── Step 2: Clear connections ────────────────────────────────────────
         from app.dependencies.db_session import engine
