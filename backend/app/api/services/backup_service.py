@@ -253,29 +253,28 @@ def delete_backup(filename: str) -> None:
     path.unlink()
 
 
-def decrypt_backup_for_download(filename: str) -> bytes:
-    """Decrypt a backup and return the plaintext ZIP bytes for download."""
-    path = get_backup_path(filename)
-    return _decrypt_bytes(path.read_bytes())
-
-
 def save_uploaded_backup(filename: str, data: bytes) -> BackupItem:
     if not FILENAME_RE.match(filename):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Filename must match: homestock_YYYY-MM-DD_HHMMSS.zip",
         )
+
+    # Decrypt first to validate structure — uploaded backups must be encrypted
+    # files produced by this server (or another instance sharing the same key).
+    # We save the encrypted bytes as-is; no re-encryption.
+    decrypted = _decrypt_bytes(data)
     try:
-        with zipfile.ZipFile(io.BytesIO(data), "r") as zf:
+        with zipfile.ZipFile(io.BytesIO(decrypted), "r") as zf:
             if "homestock_dump.sql" not in zf.namelist():
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="ZIP must contain homestock_dump.sql",
+                    detail="Backup ZIP must contain homestock_dump.sql",
                 )
     except zipfile.BadZipFile:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Uploaded file is not a valid ZIP archive.",
+            detail="Decrypted content is not a valid ZIP archive.",
         )
 
     _ensure_backup_dir()
@@ -286,7 +285,7 @@ def save_uploaded_backup(filename: str, data: bytes) -> BackupItem:
             detail=f"A backup named {filename} already exists.",
         )
 
-    dest.write_bytes(_encrypt_bytes(data))
+    dest.write_bytes(data)
     stat = dest.stat()
     return BackupItem(
         name=filename,
