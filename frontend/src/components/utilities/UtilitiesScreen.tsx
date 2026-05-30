@@ -81,6 +81,10 @@ const UtilitiesScreen: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
+    if (file.size > 500 * 1024 * 1024) {
+      setActionError('File must be 500 MB or smaller.');
+      return;
+    }
     setIsUploading(true);
     setActionError(null);
     try {

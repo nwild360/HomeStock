@@ -12,16 +12,13 @@ Endpoints:
 import logging
 from fastapi import APIRouter, Depends, Request, UploadFile, File, HTTPException, status
 from fastapi.responses import FileResponse
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from app.api.schemas import BackupItem, BackupList
 from app.api.services import backup_service
 from app.dependencies.auth import require_auth
 from app.dependencies.db_session import get_dbsession
-
-limiter = Limiter(key_func=get_remote_address)
+from app.limiter import limiter
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/backups", tags=["backups"])
 
@@ -43,12 +40,12 @@ def create_backup(request: Request, _user=Depends(require_auth)):
 
 @router.post("/upload", response_model=BackupItem, status_code=status.HTTP_201_CREATED)
 @limiter.limit("10/minute")
-async def upload_backup(
+def upload_backup(
     request: Request,
     file: UploadFile = File(...),
     _user=Depends(require_auth),
 ):
-    data = await file.read()
+    data = file.file.read()
     if len(data) > MAX_UPLOAD_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,

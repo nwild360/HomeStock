@@ -1,3 +1,4 @@
+from functools import lru_cache
 from pydantic_settings import BaseSettings
 from pydantic import Field, ValidationError, field_validator
 from typing import List
@@ -93,9 +94,9 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
 
+@lru_cache(maxsize=1)
 def get_settings() -> Settings:
     try:
-        return Settings()  # triggers validation
+        return Settings()
     except ValidationError as e:
-        # Prefer loud failure on boot instead of surprising runtime errors
         raise SystemExit(f"CONFIG ERROR: {e}") from e

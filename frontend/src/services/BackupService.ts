@@ -28,7 +28,8 @@ export async function listBackups(): Promise<BackupList> {
   });
   if (!response.ok) {
     if (response.status === 401) throw new AuthError('Not authenticated', 401);
-    throw new BackupError(`Failed to list backups: ${response.statusText}`, response.status);
+    const detail = await parseErrorDetail(response);
+    throw new BackupError(detail, response.status);
   }
   return response.json();
 }
@@ -101,6 +102,7 @@ export async function deleteBackup(filename: string): Promise<void> {
   );
   if (!response.ok) {
     if (response.status === 401) throw new AuthError('Not authenticated', 401);
-    throw new BackupError(`Failed to delete backup: ${response.statusText}`, response.status);
+    const detail = await parseErrorDetail(response);
+    throw new BackupError(detail, response.status);
   }
 }

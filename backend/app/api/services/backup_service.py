@@ -17,6 +17,7 @@ from fastapi import HTTPException, status
 
 from app.api.schemas import BackupItem
 from app.config import get_settings
+from app.dependencies.db_session import engine
 
 logger = logging.getLogger(__name__)
 
@@ -59,13 +60,14 @@ def _decrypt_bytes(data: bytes) -> bytes:
 
 
 def _ensure_backup_dir() -> None:
-    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    BACKUP_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
 
 
 def _db_env() -> dict:
     s = get_settings()
     return {
-        **os.environ,
+        "PATH": os.environ.get("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"),
+        "HOME": os.environ.get("HOME", "/root"),
         "PGPASSWORD": s.POSTGRES_PASSWORD,
         "_DB_HOST": s.POSTGRES_HOST,
         "_DB_PORT": str(s.POSTGRES_PORT),
@@ -112,41 +114,6 @@ def _hmac_of_file(path: str) -> str:
     return h.hexdigest()
 
 
-def _verify_checksum(sql_path: str, stored: str | None) -> None:
-    """Verify the plaintext SQL dump matches the stored checksum. No-op if absent."""
-    if stored is None:
-        return
-    actual = _sha256_of_file(sql_path)
-    if actual != stored:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Backup integrity check failed: checksum mismatch. The file may be corrupted.",
-        )
-
-
-def _verify_signature(sql_path: str, stored: str | None) -> None:
-    """
-    Verify the HMAC-SHA256 signature of the plaintext SQL dump.
-
-    Both a missing signature and a mismatched one are rejected — only backups
-    created by this server (which knows BACKUP_HMAC_SECRET) can be restored.
-    """
-    if stored is None:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=(
-                "Backup signature missing. Only backups created by this server "
-                "can be restored. External or manually modified backups are not accepted."
-            ),
-        )
-    actual = _hmac_of_file(sql_path)
-    if not hmac.compare_digest(actual, stored):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Backup signature verification failed: this backup may have been tampered with.",
-        )
-
-
 def list_backups() -> list[BackupItem]:
     _ensure_backup_dir()
     backups = []
@@ -165,7 +132,7 @@ def list_backups() -> list[BackupItem]:
 def create_backup() -> BackupItem:
     _ensure_backup_dir()
     env = _db_env()
-    ts = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M%S")
     zip_name = f"homestock_{ts}.zip"
     zip_path = BACKUP_DIR / zip_name
 
@@ -247,7 +214,7 @@ def get_backup_path(filename: str) -> Path:
 
 def delete_backup(filename: str) -> None:
     path = get_backup_path(filename)
-    path.unlink()
+    path.unlink(missing_ok=True)
 
 
 def save_uploaded_backup(filename: str, data: bytes) -> BackupItem:
@@ -297,7 +264,7 @@ def restore_backup(filename: str) -> None:
     is never destroyed until the restore is confirmed successful.
 
     Flow:
-      1. Extract ZIP and verify SHA256 checksum — no live schema touched yet.
+      1. Extract ZIP, decrypt SQL, verify checksum + HMAC in memory — schema untouched.
       2. Dispose connection pool + terminate active sessions.
       3. Rename homestock → homestock_pre_restore  (original data is safe).
       4. psql -f dump.sql  (dump creates a fresh homestock schema).
@@ -348,15 +315,42 @@ def _restore_locked(filename: str) -> None:
 
         plaintext_sql = _decrypt_bytes(encrypted_sql)
 
+        # Verify integrity and authenticity entirely in memory before writing
+        # to disk or touching the live schema — no unverified bytes hit disk.
+        if stored_checksum is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Backup integrity data missing: checksum not found.",
+            )
+        actual_checksum = hashlib.sha256(plaintext_sql).hexdigest()
+        if actual_checksum != stored_checksum:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Backup integrity check failed: checksum mismatch. The file may be corrupted.",
+            )
+        if stored_signature is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=(
+                    "Backup signature missing. Only backups created by this server "
+                    "can be restored. External or manually modified backups are not accepted."
+                ),
+            )
+        secret = get_settings().BACKUP_HMAC_SECRET.encode("utf-8")
+        h = hmac.new(secret, digestmod=hashlib.sha256)
+        h.update(plaintext_sql)
+        if not hmac.compare_digest(h.hexdigest(), stored_signature):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Backup signature verification failed: this backup may have been tampered with.",
+            )
+
+        # Both checks passed — write the verified plaintext to disk
         sql_path = os.path.join(tmpdir, "homestock_dump.sql")
         with open(sql_path, "wb") as f:
             f.write(plaintext_sql)
 
-        _verify_checksum(sql_path, stored_checksum)
-        _verify_signature(sql_path, stored_signature)
-
         # ── Step 2: Clear connections ────────────────────────────────────────
-        from app.dependencies.db_session import engine
         engine.dispose()
 
         try:
@@ -411,7 +405,7 @@ def _restore_locked(filename: str) -> None:
                     _PRE_RESTORE_SCHEMA, e,
                 )
 
-            logger.info("✅ Restore complete from %s", filename)
+            logger.info("Restore complete from %s", filename)
 
         except (RuntimeError, subprocess.TimeoutExpired) as exc:
             logger.error("Restore failed, rolling back to pre-restore schema: %s", exc)
@@ -421,7 +415,7 @@ def _restore_locked(filename: str) -> None:
                     env, "-c", f"ALTER SCHEMA {_PRE_RESTORE_SCHEMA} RENAME TO homestock",
                     timeout=15,
                 )
-                logger.info("✅ Rollback complete — original data is intact")
+                logger.info("Rollback complete — original data is intact")
             except (RuntimeError, subprocess.TimeoutExpired) as rollback_exc:
                 # The worst possible path: restore failed AND rollback failed.
                 # Original data is still in _PRE_RESTORE_SCHEMA — log it prominently.
@@ -433,10 +427,9 @@ def _restore_locked(filename: str) -> None:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=(
-                        f"Restore failed and automatic rollback also failed. "
-                        f"Your original data is preserved in the PostgreSQL schema "
-                        f"'{_PRE_RESTORE_SCHEMA}'. Run: "
-                        f"ALTER SCHEMA {_PRE_RESTORE_SCHEMA} RENAME TO homestock;"
+                        "Restore failed and automatic rollback also failed. "
+                        "Your original data is preserved in a recovery schema. "
+                        "Contact your administrator or check server logs for recovery instructions."
                     ),
                 )
             raise HTTPException(
@@ -445,5 +438,4 @@ def _restore_locked(filename: str) -> None:
             )
 
         finally:
-            from app.dependencies.db_session import engine
             engine.dispose()
