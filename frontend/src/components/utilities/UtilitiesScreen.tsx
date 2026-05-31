@@ -28,13 +28,14 @@ const UtilitiesScreen: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchBackups = async () => {
+  const fetchBackups = async (signal?: AbortSignal) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await listBackups();
+      const data = await listBackups(signal);
       setBackups(data.backups);
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       if (err instanceof AuthError) {
         window.location.reload();
       } else {
@@ -45,7 +46,11 @@ const UtilitiesScreen: React.FC = () => {
     }
   };
 
-  useEffect(() => { fetchBackups(); }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchBackups(controller.signal);
+    return () => controller.abort();
+  }, []);
 
   const handleCreateBackup = async () => {
     setIsCreating(true);
@@ -107,7 +112,6 @@ const UtilitiesScreen: React.FC = () => {
     setActionError(null);
     try {
       if (confirmAction.type === 'delete') {
-        setBackups((prev) => prev.filter((b) => b.name !== confirmAction.filename));
         await deleteBackup(confirmAction.filename);
         await fetchBackups();
       } else {

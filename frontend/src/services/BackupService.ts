@@ -22,9 +22,10 @@ async function parseErrorDetail(response: Response): Promise<string> {
   }
 }
 
-export async function listBackups(): Promise<BackupList> {
+export async function listBackups(signal?: AbortSignal): Promise<BackupList> {
   const response = await fetch(`${API_BASE_URL}/api/backups/`, {
     credentials: 'include',
+    signal,
   });
   if (!response.ok) {
     if (response.status === 401) throw new AuthError('Not authenticated', 401);
