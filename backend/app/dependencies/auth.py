@@ -5,7 +5,8 @@ import uuid
 from fastapi import Cookie, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 import jwt
-from passlib.context import CryptContext
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError, VerificationError, InvalidHashError
 from sqlalchemy import BigInteger, Column, String, select, text
 from sqlalchemy.orm import declarative_base, Session
 from app.config import get_settings
@@ -29,13 +30,11 @@ class User(Base):
     oidc_sub = Column(String, unique=True, nullable=True)
     oidc_provider = Column(String, nullable=True)
 
-# Password hashing context using Argon2id
-pwd_context = CryptContext(
-    schemes=["argon2"],
-    deprecated="auto",
-    argon2__memory_cost=65536,  # 64 MB
-    argon2__time_cost=3,         # 3 iterations
-    argon2__parallelism=4        # 4 parallel threads
+# Password hashing using Argon2id via argon2-cffi (replaces passlib)
+_ph = PasswordHasher(
+    memory_cost=65536,  # 64 MB
+    time_cost=3,        # 3 iterations
+    parallelism=4,      # 4 parallel threads
 )
 
 # OAuth2 scheme - token obtained from /api/auth/token endpoint
@@ -48,13 +47,16 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash using Argon2id."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a password against its Argon2id hash."""
+    try:
+        return _ph.verify(hashed_password, plain_password)
+    except (VerifyMismatchError, VerificationError, InvalidHashError):
+        return False
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password using Argon2id."""
-    return pwd_context.hash(password)
+    """Hash a password with Argon2id."""
+    return _ph.hash(password)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

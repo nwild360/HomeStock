@@ -4,6 +4,7 @@ import io
 import os
 import re
 import logging
+import shutil
 import tempfile
 import subprocess
 import threading
@@ -21,17 +22,42 @@ from app.dependencies.db_session import engine
 
 logger = logging.getLogger(__name__)
 
-BACKUP_DIR = Path(os.environ.get("BACKUP_STORAGE_PATH", "/app/backups"))
 FILENAME_RE = re.compile(r"^homestock_\d{4}-\d{2}-\d{2}_\d{6}\.zip$")
 MAX_BACKUP_BYTES = 500 * 1024 * 1024  # 500 MB compressed upload limit
 MAX_DECOMPRESSED_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB decompressed SQL limit
 _PRE_RESTORE_SCHEMA = "homestock_pre_restore"
+# Guard: ensure the schema name constant only contains safe identifier characters.
+# This prevents any future parameterization of this value from introducing SQL
+# injection through the f-string interpolations below.
+assert re.match(r"^[a-z][a-z0-9_]{0,62}$", _PRE_RESTORE_SCHEMA), (
+    f"_PRE_RESTORE_SCHEMA '{_PRE_RESTORE_SCHEMA}' contains unsafe identifier characters"
+)
 
 # Only one restore may run at a time. Non-blocking acquire returns a 409
 # immediately rather than queuing a second restore behind a long-running one.
 _restore_lock = threading.Lock()
 
 _NONCE_SIZE = 12  # 96-bit nonce for AES-256-GCM
+
+
+def _resolve_binary(name: str) -> str:
+    """Resolve a system binary to its absolute path at module load; fail fast if missing."""
+    path = shutil.which(name)
+    if not path:
+        raise RuntimeError(
+            f"Required binary '{name}' not found on PATH. "
+            f"Ensure postgresql-client is installed in the container."
+        )
+    return path
+
+
+_PSQL = _resolve_binary("psql")
+_PG_DUMP = _resolve_binary("pg_dump")
+
+
+def _backup_dir() -> Path:
+    """Return the backup directory path from validated settings."""
+    return Path(get_settings().BACKUP_STORAGE_PATH)
 
 
 def _get_aes_key() -> bytes:
@@ -61,7 +87,7 @@ def _decrypt_bytes(data: bytes) -> bytes:
 
 
 def _ensure_backup_dir() -> None:
-    BACKUP_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+    _backup_dir().mkdir(mode=0o700, parents=True, exist_ok=True)
 
 
 def _db_env() -> dict:
@@ -89,7 +115,7 @@ def _pg_args(env: dict) -> list[str]:
 def _run_psql(env: dict, *sql_args: str, timeout: int = 30) -> None:
     """Run psql with the given arguments (-c SQL or -f path). Raises RuntimeError on non-zero exit."""
     result = subprocess.run(
-        ["psql", *_pg_args(env), *sql_args],
+        [_PSQL, *_pg_args(env), *sql_args],
         env=env,
         capture_output=True,
         timeout=timeout,
@@ -118,7 +144,7 @@ def _hmac_of_file(path: str) -> str:
 def list_backups() -> list[BackupItem]:
     _ensure_backup_dir()
     backups = []
-    for entry in BACKUP_DIR.iterdir():
+    for entry in _backup_dir().iterdir():
         if entry.is_file() and FILENAME_RE.match(entry.name):
             stat = entry.stat()
             backups.append(BackupItem(
@@ -127,7 +153,7 @@ def list_backups() -> list[BackupItem]:
                 size_bytes=stat.st_size,
             ))
     backups.sort(key=lambda b: b.created_at, reverse=True)
-    return backups
+    return backups[:100]  # cap response; oldest beyond 100 are still on disk
 
 
 def create_backup() -> BackupItem:
@@ -135,7 +161,7 @@ def create_backup() -> BackupItem:
     env = _db_env()
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M%S")
     zip_name = f"homestock_{ts}.zip"
-    zip_path = BACKUP_DIR / zip_name
+    zip_path = _backup_dir() / zip_name
 
     tmp_fd, tmp_path = tempfile.mkstemp(suffix=".sql")
     os.close(tmp_fd)
@@ -143,7 +169,7 @@ def create_backup() -> BackupItem:
     try:
         result = subprocess.run(
             [
-                "pg_dump",
+                _PG_DUMP,
                 *_pg_args(env),
                 "--schema=homestock",
                 "-F", "p",
@@ -207,7 +233,7 @@ def get_backup_path(filename: str) -> Path:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid backup filename.",
         )
-    path = BACKUP_DIR / filename
+    path = _backup_dir() / filename
     if not path.exists():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Backup not found.")
     return path
@@ -249,7 +275,7 @@ def save_uploaded_backup(filename: str, data: bytes) -> BackupItem:
         )
 
     _ensure_backup_dir()
-    dest = BACKUP_DIR / filename
+    dest = _backup_dir() / filename
     if dest.exists():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -377,19 +403,19 @@ def _restore_locked(filename: str) -> None:
         except (RuntimeError, subprocess.TimeoutExpired) as e:
             logger.warning("pg_terminate_backend warning (non-fatal): %s", e)
 
-        # ── Step 3: Drop any stale temp schema, then rename live schema ──────
+        # ── Step 3: Atomically drop any stale schema and rename live schema ──
+        # Single transaction eliminates the window where the stale schema is
+        # gone but the rename hasn't happened yet, which would leave no safety
+        # net if the process was killed between those two separate calls.
         try:
             _run_psql(
-                env, "-c", f"DROP SCHEMA IF EXISTS {_PRE_RESTORE_SCHEMA} CASCADE",
-                timeout=30,
-            )
-        except (RuntimeError, subprocess.TimeoutExpired) as e:
-            logger.warning("Could not drop stale pre-restore schema (non-fatal): %s", e)
-
-        try:
-            _run_psql(
-                env, "-c", f"ALTER SCHEMA homestock RENAME TO {_PRE_RESTORE_SCHEMA}",
-                timeout=15,
+                env,
+                "-c",
+                f"BEGIN; "
+                f"DROP SCHEMA IF EXISTS {_PRE_RESTORE_SCHEMA} CASCADE; "
+                f"ALTER SCHEMA homestock RENAME TO {_PRE_RESTORE_SCHEMA}; "
+                f"COMMIT;",
+                timeout=45,
             )
         except (RuntimeError, subprocess.TimeoutExpired) as e:
             logger.error("Schema rename failed — aborting restore: %s", e)

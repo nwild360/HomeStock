@@ -137,9 +137,9 @@ class OidcSettings(BaseModel):
 
 # ---- Backups ----
 class BackupItem(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1, max_length=255, pattern=r"^homestock_\d{4}-\d{2}-\d{2}_\d{6}\.zip$")
     created_at: datetime
-    size_bytes: int
+    size_bytes: int = Field(..., ge=0)
 
 class BackupList(BaseModel):
     backups: List[BackupItem]

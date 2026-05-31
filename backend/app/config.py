@@ -38,6 +38,18 @@ class Settings(BaseSettings):
     COOKIE_SECURE: bool = Field(default=True)  # Set to True in production (HTTPS)
     COOKIE_SAMESITE: str = Field(default="lax")  # "strict", "lax", or "none"
 
+    # Directory where backup ZIP files are stored. Must be an absolute path.
+    BACKUP_STORAGE_PATH: str = Field(default="/app/backups")
+
+    @field_validator("BACKUP_STORAGE_PATH")
+    @classmethod
+    def validate_backup_storage_path(cls, v: str) -> str:
+        if not v.startswith("/"):
+            raise ValueError(
+                f"BACKUP_STORAGE_PATH must be an absolute path, got: {v!r}"
+            )
+        return v
+
     # Backup HMAC signing secret — authenticates server-created backups on restore.
     # Generate with: python -c "import secrets; print(secrets.token_hex(32))"
     BACKUP_HMAC_SECRET: str = Field(...)
@@ -48,6 +60,11 @@ class Settings(BaseSettings):
         if len(v) < 32:
             raise ValueError(
                 "BACKUP_HMAC_SECRET must be at least 32 characters. "
+                "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        if len(set(v)) < 8:
+            raise ValueError(
+                "BACKUP_HMAC_SECRET has insufficient entropy (fewer than 8 unique characters). "
                 "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
             )
         return v
