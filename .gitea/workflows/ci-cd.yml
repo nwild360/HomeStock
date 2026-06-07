@@ -20,7 +20,7 @@ jobs:
       # Scan the whole tree for ALL severities (report-only for now — flip
       # --exit-code to 1 to make findings block the deploy).
       - name: Trivy filesystem scan (all severities, report-only)
-        run: trivy fs --scanners vuln,secret,misconfig --exit-code 0 --no-progress .
+        run: trivy fs --scanners vuln,secret,misconfig --exit-code 0 --no-progress --quiet .
 
       # Render .env from Vault, build (blocking), snapshot, rsync, compose up.
       # See /usr/local/bin/homestock-deploy (Ansible gitea_runner role).
