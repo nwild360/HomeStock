@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine
+from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, Session
 from app.config import get_settings
 
@@ -11,10 +12,19 @@ db_name = settings.POSTGRES_DB
 db_host = settings.POSTGRES_HOST
 db_port = settings.POSTGRES_PORT
 
-DATABASE_URL = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+# URL.create() stores the password in a structured object; repr() masks it as
+# "***" so it can never appear in logs or exception messages.
+DATABASE_URL = URL.create(
+    drivername="postgresql",
+    username=db_user,
+    password=db_password,
+    host=db_host,
+    port=db_port,
+    database=db_name,
+)
 # Create the SQLAlchemy engine and session factory
 engine = create_engine(
-	str(DATABASE_URL), 
+    DATABASE_URL,
 	pool_pre_ping=True,
     pool_size=5,
 	pool_recycle=3600,

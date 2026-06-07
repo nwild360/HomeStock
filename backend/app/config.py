@@ -1,3 +1,4 @@
+from functools import lru_cache
 from pydantic_settings import BaseSettings
 from pydantic import Field, ValidationError, field_validator
 from typing import List
@@ -37,8 +38,61 @@ class Settings(BaseSettings):
     COOKIE_SECURE: bool = Field(default=True)  # Set to True in production (HTTPS)
     COOKIE_SAMESITE: str = Field(default="lax")  # "strict", "lax", or "none"
 
+    # Directory where backup ZIP files are stored. Must be an absolute path.
+    BACKUP_STORAGE_PATH: str = Field(default="/app/backups")
+
+    @field_validator("BACKUP_STORAGE_PATH")
+    @classmethod
+    def validate_backup_storage_path(cls, v: str) -> str:
+        if not v.startswith("/"):
+            raise ValueError(
+                f"BACKUP_STORAGE_PATH must be an absolute path, got: {v!r}"
+            )
+        return v
+
+    # Backup HMAC signing secret — authenticates server-created backups on restore.
+    # Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+    BACKUP_HMAC_SECRET: str = Field(...)
+
+    @field_validator("BACKUP_HMAC_SECRET")
+    @classmethod
+    def validate_backup_hmac_secret(cls, v: str) -> str:
+        if len(v) < 32:
+            raise ValueError(
+                "BACKUP_HMAC_SECRET must be at least 32 characters. "
+                "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        if len(set(v)) < 8:
+            raise ValueError(
+                "BACKUP_HMAC_SECRET has insufficient entropy (fewer than 8 unique characters). "
+                "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        return v
+
+    # Backup encryption key — AES-256-GCM key for encrypting backup files at rest.
+    # Must be exactly 64 hex characters (32 bytes). Keep separate from BACKUP_HMAC_SECRET.
+    # Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+    BACKUP_ENCRYPTION_KEY: str = Field(...)
+
+    @field_validator("BACKUP_ENCRYPTION_KEY")
+    @classmethod
+    def validate_backup_encryption_key(cls, v: str) -> str:
+        try:
+            key_bytes = bytes.fromhex(v)
+        except ValueError:
+            raise ValueError(
+                "BACKUP_ENCRYPTION_KEY must be a hex string. "
+                "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        if len(key_bytes) != 32:
+            raise ValueError(
+                "BACKUP_ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes). "
+                "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        return v
+
     # Note: JWT signing uses Ed25519 (EdDSA) keys for compact, secure signatures
-    # Keys are ephemeral and regenerated on container restart 
+    # Keys are ephemeral and regenerated on container restart
 
     @property
     def cors_origins_list(self) -> List[str]:
@@ -57,9 +111,9 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
 
+@lru_cache(maxsize=1)
 def get_settings() -> Settings:
     try:
-        return Settings()  # triggers validation
+        return Settings()
     except ValidationError as e:
-        # Prefer loud failure on boot instead of surprising runtime errors
         raise SystemExit(f"CONFIG ERROR: {e}") from e

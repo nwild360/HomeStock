@@ -3,9 +3,10 @@ import HouseholdIcon from '../assets/HouseHoldIcon.svg';
 import DataManagementIcon from '../assets/DataManagement.svg';
 import PeopleIcon from '../assets/People.svg';
 import SettingsIcon from '../assets/Settings.svg';
+import UtilitiesIcon from '../assets/UtilitiesIcon.svg';
 
 export type InventoryType = 'food' | 'household'; // Could add equipment/tools later
-export type ScreenType = InventoryType | 'data' | 'users' | 'settings';
+export type ScreenType = InventoryType | 'data' | 'users' | 'settings' | 'utilities';
 
 export interface MenuItem {
   id: ScreenType;
@@ -31,6 +32,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { id: 'data', label: 'Data', icon: DataManagementIcon, separator: true },
   { id: 'users', label: 'Users', icon: PeopleIcon },
   { id: 'settings', label: 'Settings', icon: SettingsIcon, separator: true },
+  { id: 'utilities', label: 'Utilities', icon: UtilitiesIcon },
 ];
 
 export const STAT_BOX_CONFIGS: Record<InventoryType, StatBoxConfig> = {
