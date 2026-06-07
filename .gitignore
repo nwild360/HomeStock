@@ -12,6 +12,7 @@ venv/
 
 # claude code
 CLAUDE.md
+.claude
 
 # User-specific files
 *.rsuser

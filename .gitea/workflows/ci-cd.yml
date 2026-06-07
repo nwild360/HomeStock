@@ -1,0 +1,31 @@
+name: HomeStock CI/CD
+
+# Runs on push to master (merge = prod-ready). Executes on the host-executor
+# Gitea runner that lives on the HomeStock LXC (label `homestock`). All the
+# homelab-specific work — render .env from Vault, Proxmox snapshot, rsync into
+# /opt/HomeStock, compose up — lives in the host-installed `homestock-deploy`
+# script (managed by Ansible's gitea_runner role), NOT in this repo. So this
+# file carries no secrets and no infra details beyond the runner label.
+on:
+  push:
+    branches: [master]
+
+jobs:
+  ci-cd:
+    runs-on: homestock
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Scan the whole tree for ALL severities (report-only for now — flip
+      # --exit-code to 1 to make findings block the deploy).
+      - name: Trivy filesystem scan (all severities, report-only)
+        run: trivy fs --scanners vuln,secret,misconfig --exit-code 0 --no-progress .
+
+      # Render .env from Vault, build (blocking), snapshot, rsync, compose up.
+      # See /usr/local/bin/homestock-deploy (Ansible gitea_runner role).
+      - name: Snapshot, build & deploy
+        env:
+          VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
+          VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID }}
+        run: homestock-deploy "$GITHUB_WORKSPACE"

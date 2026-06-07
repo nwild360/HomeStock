@@ -154,7 +154,7 @@ const UtilitiesScreen: React.FC = () => {
             <p>{error}</p>
           </div>
           <button
-            onClick={fetchBackups}
+            onClick={() => fetchBackups()}
             className="appearance-none px-4 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600"
           >
             Retry
