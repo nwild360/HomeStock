@@ -17,14 +17,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Scan the whole tree for ALL severities (report-only for now — flip
-      # --exit-code to 1 to make findings block the deploy).
-      - name: Trivy filesystem scan (all severities, report-only)
-        run: trivy fs --scanners vuln,secret,misconfig --exit-code 0 --no-progress --quiet .
-
-      # Render .env from Vault, build (blocking), snapshot, rsync, compose up.
+      # Trivy scans (fs + image), Vault-rendered .env, blocking build, Proxmox
+      # snapshot, rsync, and compose up all live in the host-installed
+      # homestock-deploy script. Trivy reports are written to the host, not here.
       # See /usr/local/bin/homestock-deploy (Ansible gitea_runner role).
-      - name: Snapshot, build & deploy
+      - name: Scan, snapshot, build & deploy
         env:
           VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
           VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID }}
