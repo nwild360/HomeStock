@@ -3,6 +3,10 @@
 ###############################################################################
 * text=auto
 
+# Shell scripts must keep LF endings so they execute inside Linux containers
+# (a CRLF shebang/body silently breaks with "no such file or directory").
+*.sh text eol=lf
+
 ###############################################################################
 # Set default behavior for command prompt diff.
 #
