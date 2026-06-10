@@ -26,6 +26,10 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
     expiration_date: '',
     date_bought: '',
   });
+  // Raw text the user has typed in the quantity field. Kept separate from the
+  // numeric formData.quantity so intermediate values like "0." or "1." survive
+  // (a controlled numeric value would strip the trailing decimal point).
+  const [quantityInput, setQuantityInput] = useState('1');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,6 +78,7 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
         expiration_date: editItem.expiration_date || '',
         date_bought: editItem.date_bought || '',
       });
+      setQuantityInput(String(editItem.quantity));
       setCategorySearch(editItem.category_name || '');
       setUnitSearch(editItem.unit_name || '');
     } else if (!isOpen) {
@@ -88,6 +93,7 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
         expiration_date: '',
         date_bought: '',
       });
+      setQuantityInput('1');
       setCategorySearch('');
       setUnitSearch('');
     }
@@ -270,23 +276,8 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
     }
   };
 
-  // Format quantity to display (remove unnecessary decimals)
-  const formatQuantity = (qty: number): string => {
-    // If whole number, show without decimals
-    if (qty % 1 === 0) {
-      return qty.toString();
-    }
-    // Otherwise show with decimals
-    return qty.toString();
-  };
-
   const handleQuantityChange = (value: string) => {
-    if (value === '') {
-      setFormData({ ...formData, quantity: 0 });
-      return;
-    }
-
-    // Allow digits and decimal point
+    // Allow digits and a single decimal point only
     const cleanValue = value.replace(/[^\d.]/g, '');
 
     // Ensure only one decimal point
@@ -300,10 +291,15 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
       return;
     }
 
-    const numValue = parseFloat(cleanValue) || 0;
-    if (numValue <= 999) {
-      setFormData({ ...formData, quantity: numValue });
+    // Parse to a number for the form data. Intermediate values like "" or "."
+    // are treated as 0 but the raw text is preserved so the user can keep typing.
+    const numValue = cleanValue === '' || cleanValue === '.' ? 0 : parseFloat(cleanValue);
+    if (Number.isNaN(numValue) || numValue > 999) {
+      return;
     }
+
+    setQuantityInput(cleanValue);
+    setFormData({ ...formData, quantity: numValue });
   };
 
   if (!isOpen) return null;
@@ -435,7 +431,7 @@ function AddItemOverlay({ isOpen, onClose, onItemCreated, editItem }: AddItemOve
               id="quantity"
               type="text"
               inputMode="decimal"
-              value={formatQuantity(formData.quantity)}
+              value={quantityInput}
               onChange={(e) => handleQuantityChange(e.target.value)}
               onFocus={(e) => e.target.select()}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
