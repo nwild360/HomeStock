@@ -8,6 +8,9 @@ import UtilitiesIcon from '../assets/UtilitiesIcon.svg';
 export type InventoryType = 'food' | 'household'; // Could add equipment/tools later
 export type ScreenType = InventoryType | 'data' | 'users' | 'settings' | 'utilities';
 
+// Which stat box is currently filtering the table. 'all' = no filter (Total box).
+export type StatusFilter = 'all' | 'expiring' | 'expired';
+
 export interface MenuItem {
   id: ScreenType;
   label: string;

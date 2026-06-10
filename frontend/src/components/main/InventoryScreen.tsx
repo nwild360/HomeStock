@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import StatBoxes from './StatBoxes';
 import ItemsTable from './ItemsTable.tsx';
 import AddItemOverlay from '../sidebar/AddItemOverlay.tsx';
-import type { InventoryType } from '../../types/InventoryTypes.ts';
+import type { InventoryType, StatusFilter } from '../../types/InventoryTypes.ts';
 import { getItems, getItem, updateStock, deleteItem, ItemsError } from '../../services/ItemsService.ts';
 import { AuthError } from '../../services/AuthService.ts';
 import type { Item } from '../../types/ItemTypes.ts';
@@ -24,10 +24,44 @@ interface InventoryScreenProps {
   onRefresh?: () => void;
 }
 
+// Parse a 'YYYY-MM-DD' string as a local date (avoids UTC off-by-one).
+const parseLocalDate = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+// Classify an item's expiry/age status. Single source of truth for both the
+// stat box counts and the clickable stat-box filter so they can never diverge.
+// food: based on expiration_date; household: based on date_bought (age).
+const getItemStatus = (
+  item: InventoryItem,
+  screenType: InventoryType,
+  today: Date
+): Exclude<StatusFilter, 'all'> | 'ok' => {
+  if (screenType === 'food') {
+    if (!item.expiration_date) return 'ok';
+    const d = parseLocalDate(item.expiration_date);
+    if (d < today) return 'expired';
+    const in7Days = new Date(today);
+    in7Days.setDate(today.getDate() + 7);
+    return d <= in7Days ? 'expiring' : 'ok';
+  }
+  // household: items "expire" by age since purchase
+  if (!item.date_bought) return 'ok';
+  const d = parseLocalDate(item.date_bought);
+  const ago1Year = new Date(today);
+  ago1Year.setFullYear(today.getFullYear() - 1);
+  if (d <= ago1Year) return 'expired';
+  const ago6Months = new Date(today);
+  ago6Months.setMonth(today.getMonth() - 6);
+  return d <= ago6Months ? 'expiring' : 'ok';
+};
+
 const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKey, onRefresh }) => {
   const [backendItems, setBackendItems] = useState<Item[]>([]); // Store original backend items
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeFilter, setActiveFilter] = useState<StatusFilter>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,8 +119,24 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
     fetchItems();
   }, [screenType, refreshKey]);
 
-  // Filter items based on search
-  const filteredItems = items.filter((item) => {
+  // Reset the active stat-box filter when switching inventory type.
+  useEffect(() => {
+    setActiveFilter('all');
+    setCurrentPage(1);
+  }, [screenType]);
+
+  // Stat-box status filter (stacks before search). Computed once so the same
+  // `today` is shared with the count calculations below.
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const statusFilteredItems =
+    activeFilter === 'all'
+      ? items
+      : items.filter((item) => getItemStatus(item, screenType, today) === activeFilter);
+
+  // Filter items based on search (applied on top of the status filter)
+  const filteredItems = statusFilteredItems.filter((item) => {
     if (!searchTerm) return true;
 
     const searchLower = searchTerm.toLowerCase().trim();
@@ -107,42 +157,21 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
 
-  // Calculate stats from backendItems
-  const parseLocalDate = (dateStr: string): Date => {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    return new Date(year, month - 1, day);
+  // Stat box counts — same getItemStatus source as the filter above, so the
+  // numbers always match what the filter shows. Counts reflect the whole type
+  // set (unaffected by the active filter or search).
+  const expiringItems = items.filter(
+    (item) => getItemStatus(item, screenType, today) === 'expiring'
+  ).length;
+  const expiredItems = items.filter(
+    (item) => getItemStatus(item, screenType, today) === 'expired'
+  ).length;
+
+  // Toggle a stat-box filter: clicking the active box (or Total) returns to 'all'.
+  const handleFilterSelect = (filter: StatusFilter) => {
+    setActiveFilter((prev) => (prev === filter ? 'all' : filter));
+    setCurrentPage(1);
   };
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  let expiringItems: number;
-  let expiredItems: number;
-
-  if (screenType === 'food') {
-    const in7Days = new Date(today);
-    in7Days.setDate(today.getDate() + 7);
-    expiredItems = backendItems.filter(item =>
-      item.expiration_date && parseLocalDate(item.expiration_date) < today
-    ).length;
-    expiringItems = backendItems.filter(item => {
-      if (!item.expiration_date) return false;
-      const d = parseLocalDate(item.expiration_date);
-      return d >= today && d <= in7Days;
-    }).length;
-  } else {
-    const ago1Year = new Date(today);
-    ago1Year.setFullYear(today.getFullYear() - 1);
-    const ago6Months = new Date(today);
-    ago6Months.setMonth(today.getMonth() - 6);
-    expiredItems = backendItems.filter(item =>
-      item.date_bought && parseLocalDate(item.date_bought) <= ago1Year
-    ).length;
-    expiringItems = backendItems.filter(item => {
-      if (!item.date_bought) return false;
-      const d = parseLocalDate(item.date_bought);
-      return d > ago1Year && d <= ago6Months;
-    }).length;
-  }
 
   // Handlers
   const handleQuantityChange = async (id: string, newQuantity: number) => {
@@ -253,11 +282,13 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ screenType, refreshKe
       </h1>
 
       {/* Stats Cards */}
-      <StatBoxes 
+      <StatBoxes
         totalItems={totalItems}
         expiringItems={expiringItems}
         expiredItems={expiredItems}
         screenType={screenType}
+        activeFilter={activeFilter}
+        onFilterSelect={handleFilterSelect}
       />
 
       {/* Search Bar */}
