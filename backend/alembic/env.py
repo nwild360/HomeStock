@@ -130,6 +130,14 @@ def run_migrations_online() -> None:
     )
     with connectable.connect() as connection:
         _check_restore_artifacts(connection)
+        # Pin the search_path so migration DDL that uses unqualified object names
+        # resolves against the homestock schema. init.sql installs pg_trgm (and
+        # its gin_trgm_ops operator class) into homestock; without this, Alembic
+        # connects on the role's default search_path (public) and a first-run
+        # CREATE INDEX ... gin (name gin_trgm_ops) fails to resolve the opclass.
+        # Committed so the session-level SET survives the migration transaction.
+        connection.execute(text("SET search_path TO homestock, public"))
+        connection.commit()
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
