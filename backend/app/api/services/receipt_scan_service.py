@@ -15,6 +15,16 @@ RECEIPT_SCAN_PROMPT = """You are a receipt parser. Extract all distinct purchasa
 Return ONLY valid JSON matching this exact schema — no markdown, no explanation, no extra keys:
 {"items": [{"item_name": "string", "item_type": "food or household", "category_name": "string or null", "quantity": number, "unit_name": "string or null", "notes": "string or null"}]}
 Rules:
+- item_name: do NOT copy the receipt text verbatim. Translate the abbreviated, truncated, or all-caps receipt label into the clean, standard, human-readable name for the product, using Title Case. Expand abbreviations, fix word order, and remove brand/size/packaging noise so the result reads like a normal grocery name.
+  Examples:
+    "GRK YOGRT" -> "Greek Yogurt"
+    "SPICE CUMIN" -> "Cumin"
+    "YEAST ACTIVE DRY" -> "Active Dry Yeast"
+    "CHKN BRST BNLS" -> "Boneless Chicken Breast"
+    "WHL MLK GAL" -> "Whole Milk"
+    "BNNA" -> "Banana"
+    "PPR TWL 6PK" -> "Paper Towels"
+  If you genuinely cannot tell what the product is, keep the original label as-is.
 - item_type must be exactly "food" or "household"
 - quantity must be a positive number; default to 1 if unclear
 - category_name: infer a general category (e.g. "Dairy", "Cleaning", "Produce", "Beverages") or null if unclear
