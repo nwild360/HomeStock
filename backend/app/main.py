@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.limiter import limiter
-from app.api.routers import meta, items, auth, data, oidc, receipt, backups
+from app.api.routers import meta, items, auth, data, oidc, receipt, backups, api_keys
 from app.config import get_settings
 from app.init.default_user import initialize_default_user
 
@@ -67,6 +67,7 @@ app.add_middleware(
 # Include routers with prefix
 app.include_router(meta.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
+app.include_router(api_keys.router, prefix="/api")
 app.include_router(items.router, prefix="/api")
 app.include_router(data.router, prefix="/api")
 app.include_router(oidc.router, prefix="/api")

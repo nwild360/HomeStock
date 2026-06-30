@@ -121,6 +121,23 @@ class UsernameChange(BaseModel):
     """Request model for changing username."""
     new_username: str = Field(..., min_length=3, max_length=50, pattern=r'^[a-zA-Z0-9_-]+$', description="New username (3-50 chars, alphanumeric with _-)")
 
+# ---- API Keys ----
+class ApiKeyCreate(BaseModel):
+    """Request model for minting a new API key."""
+    label: str = Field(..., min_length=1, max_length=100, description="Human-readable name for the key")
+
+class ApiKeyOut(BaseModel):
+    """Response model for an API key (never includes the secret)."""
+    id: int
+    label: str
+    key_prefix: str
+    created_at: datetime
+    last_used_at: Optional[datetime] = None
+
+class ApiKeyCreated(ApiKeyOut):
+    """Response model returned once at creation, including the one-time plaintext key."""
+    key: str
+
 # ---- OIDC ----
 class OidcConfig(BaseModel):
     """Public OIDC config returned to unauthenticated clients (no secret)."""

@@ -61,6 +61,17 @@ CREATE TABLE IF NOT EXISTS homestock.jwt_blacklist (
     revoked_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Per-user API keys for programmatic access
+CREATE TABLE IF NOT EXISTS homestock.api_keys (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES homestock.users(id) ON DELETE CASCADE,
+    label TEXT NOT NULL CHECK (length(label) BETWEEN 1 AND 100),
+    key_hash TEXT NOT NULL UNIQUE,   -- SHA-256 hex of the plaintext key
+    key_prefix TEXT NOT NULL,        -- non-secret display prefix
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_used_at TIMESTAMPTZ
+);
+
 -- ========== Indexes ==========
 -- Note: username index not needed - UNIQUE constraint on users.username automatically creates an index
 
@@ -72,6 +83,9 @@ CREATE INDEX IF NOT EXISTS idx_items_name_trgm ON homestock.items USING gin (nam
 -- JWT blacklist indexes
 CREATE INDEX IF NOT EXISTS idx_jwt_blacklist_expires_at ON homestock.jwt_blacklist (expires_at);
 CREATE INDEX IF NOT EXISTS idx_jwt_blacklist_username ON homestock.jwt_blacklist (username);
+
+-- API keys indexes
+CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON homestock.api_keys (user_id);
 
 -- ========== Triggers ==========
 CREATE OR REPLACE FUNCTION homestock.update_updated_at_column()

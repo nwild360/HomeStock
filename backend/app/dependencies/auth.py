@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 import logging
 import uuid
-from fastapi import Cookie, Depends, HTTPException, status
+from fastapi import Cookie, Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from argon2 import PasswordHasher
@@ -185,22 +185,35 @@ def blacklist_token(db: Session, jti: str, username: str, expires_at: datetime) 
 async def get_current_user(
     access_token: Optional[str] = Cookie(None),
     authorization: Optional[str] = Depends(oauth2_scheme),
+    x_api_key: Optional[str] = Header(None),
     db: Session = Depends(get_dbsession)
 ) -> dict:
     """
-    Dependency to get current authenticated user from Ed25519 JWT token.
+    Dependency to get current authenticated user.
 
-    Supports TWO authentication methods:
-    1. httpOnly cookie (for frontend) - Primary method
-    2. Authorization Bearer header (for Swagger UI, API testing) - Fallback
+    Supports THREE authentication methods:
+    1. X-API-Key header (for programmatic access) - resolves to the owning user
+    2. httpOnly cookie (for frontend) - Primary interactive method
+    3. Authorization Bearer header (for Swagger UI, API testing) - Fallback
 
-    Verifies Ed25519 signature using PyJWT.
+    Verifies Ed25519 signature using PyJWT for cookie/Bearer tokens.
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    # Programmatic access via personal API key takes precedence when present.
+    if x_api_key:
+        # Imported here to avoid a circular import (service imports schemas only).
+        from app.api.services.api_keys_service import resolve_user_by_api_key
+        user = resolve_user_by_api_key(db, x_api_key)
+        if user is None:
+            logger.warning("❌ Invalid X-API-Key presented")
+            raise credentials_exception
+        logger.info(f"✅ Authenticated via API key for user: {user['username']} (user_id={user['id']})")
+        return user
 
     # Try cookie first (frontend), then Authorization header (Swagger/API)
     token = access_token or authorization
