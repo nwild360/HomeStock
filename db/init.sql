@@ -72,6 +72,18 @@ CREATE TABLE IF NOT EXISTS homestock.api_keys (
     last_used_at TIMESTAMPTZ
 );
 
+-- MCP server feature toggle (singleton row id=1)
+CREATE TABLE IF NOT EXISTS homestock.mcp_settings (
+    id             BIGSERIAL PRIMARY KEY,
+    enabled        BOOLEAN NOT NULL DEFAULT FALSE,
+    allow_api_keys BOOLEAN NOT NULL DEFAULT FALSE,
+    server_url     TEXT,                             -- canonical public MCP URL (OAuth audience/resource id)
+    required_scope TEXT DEFAULT 'mcp:tools',
+    updated_at     TIMESTAMPTZ DEFAULT NOW()
+);
+INSERT INTO homestock.mcp_settings (enabled)
+SELECT FALSE WHERE NOT EXISTS (SELECT 1 FROM homestock.mcp_settings WHERE id = 1);
+
 -- ========== Indexes ==========
 -- Note: username index not needed - UNIQUE constraint on users.username automatically creates an index
 

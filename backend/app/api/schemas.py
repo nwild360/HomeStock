@@ -162,6 +162,18 @@ class BackupList(BaseModel):
     backups: List[BackupItem]
     total: int
 
+# ---- MCP Server ----
+class McpConfig(BaseModel):
+    """Public MCP server config (no details exposed)."""
+    enabled: bool
+
+class McpSettings(BaseModel):
+    """Full MCP server settings for admin read/write."""
+    enabled: bool
+    allow_api_keys: bool = False
+    server_url: Optional[str] = None
+    required_scope: Optional[str] = "mcp:tools"
+
 # ---- Receipt Scan ----
 class ReceiptScanConfig(BaseModel):
     """Public receipt scan config (no credentials exposed)."""

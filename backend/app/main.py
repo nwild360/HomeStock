@@ -1,12 +1,15 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.routing import Route
 from contextlib import asynccontextmanager
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.limiter import limiter
-from app.api.routers import meta, items, auth, data, oidc, receipt, backups, api_keys
+from app.api.routers import meta, items, auth, data, oidc, receipt, backups, api_keys, mcp as mcp_router
 from app.config import get_settings
 from app.init.default_user import initialize_default_user
+from app.mcp_server.auth import McpAuthMiddleware
+from app.mcp_server.server import mcp as mcp_instance
 
 settings = get_settings()
 
@@ -32,7 +35,10 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
 
-    yield
+    # MCP: mounted sub-app lifespans don't run automatically; the session
+    # manager task group must be running for /mcp to serve requests.
+    async with mcp_instance.session_manager.run():
+        yield
     # Shutdown: cleanup if needed (none currently)
 
 
@@ -73,3 +79,14 @@ app.include_router(data.router, prefix="/api")
 app.include_router(oidc.router, prefix="/api")
 app.include_router(receipt.router, prefix="/api")
 app.include_router(backups.router, prefix="/api")
+app.include_router(mcp_router.router, prefix="/api")
+app.include_router(mcp_router.well_known_router)  # /.well-known/oauth-protected-resource
+
+# MCP protocol endpoint (Streamable HTTP). An exact Route (not a Mount) so
+# POST /mcp is served directly instead of 307-redirecting to /mcp/, which
+# some MCP clients won't follow. Registered at module level so
+# streamable_http_app() creates the session manager before the lifespan
+# accesses it. Auth + enabled-toggle enforced by McpAuthMiddleware.
+app.router.routes.append(
+    Route("/mcp", McpAuthMiddleware(mcp_instance.streamable_http_app()), methods=["GET", "POST", "DELETE"])
+)

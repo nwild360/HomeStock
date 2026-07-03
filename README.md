@@ -19,6 +19,7 @@ HomeStock is a full-stack web application designed to help you track and manage 
 - 📊 **Categories & Units** - Organize items with custom categories and units
 - 👥 **User Management** - Secure multi-user support with JWT authentication
 - 🔑 **SSO / OIDC** - Single Sign-On via Keycloak (or any OIDC-compliant provider)
+- 🤖 **MCP Server** - Let AI agents (Claude Code, Claude Desktop, …) manage your inventory via the Model Context Protocol
 - 📱 **Responsive Design** - Works seamlessly on desktop, tablet, and mobile
 - 🔒 **Security First** - Argon2id password hashing, JWT tokens, rate limiting
 - 🐳 **Docker Ready** - One-command deployment with Docker Compose
@@ -440,6 +441,38 @@ docker-compose up -d --build
 ```
 
 If you previously ran `alembic stamp 001` manually, the 002 migration will apply on next start.
+
+## 🤖 MCP Server (AI Agents)
+
+HomeStock exposes its inventory operations to AI agents via the [Model Context Protocol](https://modelcontextprotocol.io) — 14 tools covering items (list, get, create, update, adjust stock, delete) plus category and unit management. The server uses the Streamable HTTP transport at `https://your-homestock/mcp` and is **disabled by default**.
+
+### Enabling
+
+Go to **Settings → Integrations → MCP Server → Configure**, toggle **Enable MCP Server**, and save. At least one auth method must be available:
+
+- **OAuth sign-in (recommended)** — requires SSO / OIDC to be configured (see above). Agents authenticate through Keycloak with short-lived tokens; no long-lived credentials are stored in agent config.
+- **API key auth (fallback)** — toggle **Allow API Key Auth** and use a personal key from **Settings → API Keys**. Useful for headless agents or instances without Keycloak.
+
+### Connecting an agent
+
+```bash
+# OAuth (browser login on first connect)
+claude mcp add --transport http homestock https://your-homestock/mcp
+
+# API key fallback
+claude mcp add --transport http homestock https://your-homestock/mcp \
+  --header "Authorization: Bearer hs_live_..."
+```
+
+### Keycloak setup for OAuth
+
+One-time realm configuration, in addition to the SSO client above:
+
+1. **Client scope**: create a client scope named `mcp:tools`, set its type to **Default**, and enable **Include in token scope**.
+2. **Audience mapper**: inside the `mcp:tools` scope, add an **Audience** mapper whose *Included Custom Audience* is your MCP server URL (the **Server URL** shown in the MCP settings overlay, e.g. `https://your-homestock/mcp`). Tokens without this audience are rejected.
+3. **Client registration**: either enable Dynamic Client Registration with a trusted-hosts policy (**Clients → Client registration → Trusted Hosts**), or pre-register each MCP client manually.
+
+Token validation happens server-side via Keycloak's introspection endpoint using the SSO client's credentials, so revoked sessions take effect immediately.
 
 ---
 
