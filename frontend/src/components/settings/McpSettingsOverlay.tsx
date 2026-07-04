@@ -188,7 +188,24 @@ function McpSettingsOverlay({ isOpen, onClose }: McpSettingsOverlayProps) {
                   />
                   <p className="text-gray-500 text-xs">
                     Public URL of this MCP server as agents reach it — access tokens must carry it as their audience
-                    (configure an Audience mapper on the "{form.required_scope || 'mcp:tools'}" client scope in Keycloak).
+                    (configure an Audience mapper in Keycloak).
+                  </p>
+                </div>
+              )}
+
+              {oidcEnabled && (
+                <div className="flex flex-col gap-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Required scope</label>
+                  <input
+                    type="text"
+                    value={form.required_scope ?? ''}
+                    onChange={e => handleChange('required_scope', e.target.value || null)}
+                    placeholder="mcp:tools"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                  />
+                  <p className="text-gray-500 text-xs">
+                    OAuth scope that must be present on agent tokens. Leave blank if your realm grants MCP access
+                    via client roles instead of scopes — the audience check above still applies.
                   </p>
                 </div>
               )}
