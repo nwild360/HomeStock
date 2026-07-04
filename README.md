@@ -466,11 +466,7 @@ claude mcp add --transport http homestock https://your-homestock/mcp \
 
 ### Keycloak setup for OAuth
 
-One-time realm configuration, in addition to the SSO client above:
-
-1. **Client scope**: create a client scope named `mcp:tools`, set its type to **Default**, and enable **Include in token scope**.
-2. **Audience mapper**: inside the `mcp:tools` scope, add an **Audience** mapper whose *Included Custom Audience* is your MCP server URL (the **Server URL** shown in the MCP settings overlay, e.g. `https://your-homestock/mcp`). Tokens without this audience are rejected.
-3. **Client registration**: either enable Dynamic Client Registration with a trusted-hosts policy (**Clients → Client registration → Trusted Hosts**), or pre-register each MCP client manually.
+OAuth requires one-time Keycloak realm configuration (audience mappers, scope or role setup, and the agent client itself). The full walkthrough — including settings reference, machine-to-machine clients, and a troubleshooting table — lives in **[backend/app/mcp_server/mcp_config.md](backend/app/mcp_server/mcp_config.md)**.
 
 Token validation happens server-side via Keycloak's introspection endpoint using the SSO client's credentials, so revoked sessions take effect immediately.
 
